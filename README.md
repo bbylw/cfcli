@@ -1,65 +1,65 @@
-# cf 中文站
+# cf：面向整个 Cloudflare API 的智能体 CLI
 
-`cf` 是面向整个 Cloudflare API 的智能体命令行工具。本仓库是它的**非官方中文站点** —— 内容整理自 Cloudflare 官方 README、发布公告与开发者文档。
+`cf` 是 Cloudflare 推出的新一代命令行工具：命令直接从 API 文档与 SDK 共用的 OpenAPI 模式生成，一次覆盖 3,000+ 操作——从 Workers、D1、R2、KV，到 DNS、WAF、Access 与域名注册。
 
-## 技术栈
+> 本仓库是 `cf` 的中文介绍页，内容整理自 Cloudflare 官方 README、发布公告与开发者文档。`cf` 目前处于**公开测试**阶段，命令、配置与构建输出在稳定版发布前仍可能变化。
 
-Astro 7（静态输出）· React 19（仅首页终端演示一个 island）· Tailwind CSS 4 · MDX 内容集合
+## 为什么是 cf
 
-## 开发
-
-```
-bun install
-bun run dev
-```
-
-| 命令 | 作用 |
-| --- | --- |
-| `bun run dev` | 本地开发服务器 |
-| `bun run build` | 构建到 `dist/` |
-| `bun run preview` | 预览构建产物 |
-| `bun run check` | Astro / TypeScript 类型检查 |
-| `bun run lint` | ESLint（含 astro 与 react-hooks 插件） |
-| `bun run test` | Vitest 单测 |
-| `bun run verify` | 上述四项依次执行，提交前跑这个 |
-
-## 部署
-
-**必须设置 `SITE_URL`**，否则 canonical、`og:url` 与 sitemap 会指向 `localhost`：
+Wrangler 由各产品团队手工构建，只有约 280 条命令路径，术语与模式却难以统一——同一件事在 D1、Hyperdrive、Workflows 里是三种写法：
 
 ```
-SITE_URL=https://cfcli.ndjp.net bun run build
+d1 info / hyperdrive get / workflows describe
 ```
 
-输出为纯静态文件，由 GitHub Actions 构建并部署到 GitHub Pages
-（自定义域 `cfcli.ndjp.net`，配置见 `.github/workflows/deploy.yml`
-与 `public/CNAME`）。
+`cf` 换了一条路：命令由同一份模式生成，新增的 API 能力自动出现在 CLI 中，命名与参数不再各说各话。
 
-## 内容结构
+## 核心能力
 
+- **智能体自己找到命令**——用自然语言描述目标，`cf cli search` 按 API 描述与参数返回可用命令，不必先记住命令名。
+- **JSON 才是默认输出**——对人类美化排版，对智能体压缩成单行，省下的是上下文。
+- **配置也能被类型检查**——`cloudflare.config.ts` 取代 TOML，人类、编辑器与智能体的 LSP 都读得懂。
+- **Vite 成为默认构建**——具备 HMR 的开发服务器、基于 Rolldown 的构建、可直接复用的 Vite 插件生态。
+- **从 Wrangler 迁移只要一条命令**——`cf migrate` 自动转换配置；稳定版发布后 Wrangler 仍有 18 个月维护支持。
+
+## 安装
+
+```sh
+npm i -g cf
 ```
-src/content/docs/*.mdx   文档，frontmatter 的 order 决定侧栏顺序
-src/content/blog/*.mdx   博客
+
+也支持 `bun` / `pnpm` / `yarn` 全局安装。需要 Node.js 运行时（加载 `cloudflare.config.ts` 需要 Node.js 22.18+，不支持 Bun 运行时）。
+
+## 登录
+
+```sh
+cf auth login
 ```
 
-文档 frontmatter：
+在远程机器、SSH 会话或容器中加上 `--no-browser`，只打印链接而不打开浏览器。无人值守环境（CI）改用 `CLOUDFLARE_API_TOKEN` 环境变量。注意 `cf` 维护自己的凭据，不会复用 Wrangler 的登录状态。
 
-| 字段 | 说明 |
-| --- | --- |
-| `order` | 全站排序，同时决定上一篇 / 下一篇 |
-| `group` | 侧栏分组标题 |
-| `tag` | 页面顶部的徽标文案 |
-| `featured` | `true` 时出现在文档首页精选卡片 |
+## 上手三步
 
-`featured` 是显式开关，不要靠 `order` 截断前 N 条 —— 新增文档会静默改变精选结果。
+```sh
+# 1. 找到命令：用自然语言描述任务
+cf cli search "create D1 database"
 
-## 站点约定
+# 2. 创建项目并本地开发
+cf init my-worker
+cf dev
 
-- 深色主题锁定，强调色只有 Cloudflare 橙，色板定义在 `src/styles/global.css` 的 `@theme`。
-- 前景色需满足 WCAG AA 对比度 ≥ 4.5:1；`fog-600` 是元信息色，改动时请复算。
-- tab / radio 组必须走 `src/scripts/roving.ts` 的 roving tabindex，或直接用原生 `<input type="radio">`。
-- 正文排版类 `.prose-cf` 的特异性高于 Tailwind 工具类，组件若需要自己的外边距要在样式表里声明。
+# 3. 部署到你的 Cloudflare 账号
+cf deploy
+```
 
-## 第三方内容归属
+先看参数再执行：`cf schema d1 create` 查看请求结构，`--dry-run` 安全预演。
 
-`cf` 及 Cloudflare 商标归 Cloudflare, Inc. 所有。本站为社区翻译站点。
+## 相关链接
+
+- 官方仓库：https://github.com/cloudflare/cf
+- Cloudflare 开发者文档：https://developers.cloudflare.com/
+- 中文文档站：https://cfcli.ndjp.net（即本仓库部署的站点）
+
+## 商标归属
+
+`cf` 及 Cloudflare 商标归 Cloudflare, Inc. 所有。本仓库为社区中文介绍页，与 Cloudflare 官方无关。
