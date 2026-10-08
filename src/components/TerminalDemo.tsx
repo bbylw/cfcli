@@ -230,7 +230,7 @@ export default function TerminalDemo() {
     >
       <div className="flex items-center justify-between gap-3 border-b border-line bg-ink-850/60 px-3 py-2.5">
         <div className="flex items-center gap-2 text-fog-500">
-          <TerminalWindowIcon size={16} weight="bold" />
+          <TerminalWindowIcon size={16} weight="bold" aria-hidden />
           <span className="font-mono text-[11px] uppercase tracking-[0.14em]">终端</span>
         </div>
         <div className="flex items-center gap-1.5">
@@ -240,7 +240,7 @@ export default function TerminalDemo() {
               onClick={replay}
               className="flex items-center gap-1.5 rounded-full px-2.5 py-1.5 font-mono text-[11px] text-fog-500 transition-colors hover:bg-ink-800 hover:text-fog-100"
             >
-              <ArrowClockwiseIcon size={13} weight="bold" />
+              <ArrowClockwiseIcon size={13} weight="bold" aria-hidden />
               重放
             </button>
           )}
@@ -250,7 +250,7 @@ export default function TerminalDemo() {
             className="flex items-center gap-1.5 rounded-full px-2.5 py-1.5 font-mono text-[11px] text-fog-500 transition-colors hover:bg-ink-800 hover:text-fog-100"
             aria-label="复制当前命令"
           >
-            {copied ? <CheckIcon size={13} weight="bold" /> : <CopyIcon size={13} weight="bold" />}
+            {copied ? <CheckIcon size={13} weight="bold" aria-hidden /> : <CopyIcon size={13} weight="bold" aria-hidden />}
             {copied ? "已复制" : "复制"}
           </button>
         </div>

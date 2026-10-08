@@ -45,7 +45,7 @@ const hasToc = toc.length > 1;
         : "lg:grid-cols-[210px_minmax(0,1fr)]",
     ]}
   >
-    <aside class="lg:sticky lg:top-24 lg:max-h-[calc(100dvh-8rem)] lg:self-start lg:overflow-y-auto">
+    <aside class="lg:sticky lg:top-24 lg:max-h-[calc(100dvh-8rem)] lg:self-start lg:overflow-y-auto print:hidden">
       <nav aria-label="文档导航" class="grid gap-7">
         {
           Object.entries(groups).map(([groupName, items]) => (
@@ -82,6 +82,7 @@ const hasToc = toc.length > 1;
     </aside>
 
     <article class="min-w-0">
+      <div class="reading-progress" aria-hidden="true"></div>
       <header class="max-w-[68ch]">
         <div class="flex flex-wrap items-center gap-3">
           <span class="font-mono text-[11px] uppercase tracking-[0.16em] text-fog-600">
@@ -107,7 +108,7 @@ const hasToc = toc.length > 1;
         </div>
       </div>
 
-      <nav class="rule mt-14 grid gap-4 pt-8 sm:grid-cols-2" aria-label="上一篇与下一篇">
+      <nav class="rule mt-14 grid gap-4 pt-8 sm:grid-cols-2 print:hidden" aria-label="上一篇与下一篇">
         {
           prev ? (
             <a
@@ -115,7 +116,7 @@ const hasToc = toc.length > 1;
               class="panel group flex flex-col gap-1.5 p-4 transition-colors duration-200 hover:border-ink-600"
             >
               <span class="flex items-center gap-1.5 font-mono text-[11px] text-fog-600">
-                <ArrowLeftIcon size={12} weight="bold" />
+                <ArrowLeftIcon size={12} weight="bold" aria-hidden />
                 上一篇
               </span>
               <span class="text-[14px] text-fog-300 group-hover:text-fog-100">
@@ -134,7 +135,7 @@ const hasToc = toc.length > 1;
             >
               <span class="flex items-center gap-1.5 font-mono text-[11px] text-fog-600">
                 下一篇
-                <ArrowRightIcon size={12} weight="bold" />
+                <ArrowRightIcon size={12} weight="bold" aria-hidden />
               </span>
               <span class="text-[14px] text-fog-300 group-hover:text-fog-100">
                 {next.title}
@@ -147,7 +148,7 @@ const hasToc = toc.length > 1;
 
     {
       toc.length > 1 && (
-        <aside class="hidden xl:block xl:sticky xl:top-24 xl:self-start">
+        <aside class="hidden xl:block xl:sticky xl:top-24 xl:self-start print:hidden">
           <p class="font-mono text-[11px] uppercase tracking-[0.16em] text-fog-600">
             本页内容
           </p>

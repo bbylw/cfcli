@@ -24,11 +24,12 @@ const { Content } = await render(entry);
   author={entry.data.author}
 >
   <article class="shell max-w-[76ch] py-14 md:py-20">
+    <div class="reading-progress" aria-hidden="true"></div>
     <a
       href="/blog"
       class="inline-flex items-center gap-1.5 font-mono text-[12px] text-fog-600 transition-colors hover:text-fog-300"
     >
-      <ArrowLeftIcon size={13} weight="bold" />
+      <ArrowLeftIcon size={13} weight="bold" aria-hidden />
       博客
     </a>
 
@@ -38,7 +39,7 @@ const { Content } = await render(entry);
           {formatDate(entry.data.publishedAt)}
         </time>
         <span class="flex items-center gap-1.5">
-          <ClockIcon size={12} weight="bold" />
+          <ClockIcon size={12} weight="bold" aria-hidden />
           约 {entry.data.minutes} 分钟
         </span>
       </div>

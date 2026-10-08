@@ -96,12 +96,12 @@ const coverage = ["Workers", "D1", "R2", "KV", "DNS", "WAF", "Access", "Pages", 
 
         <div class="mt-8 flex flex-wrap items-center gap-3">
           <a href="/docs/install" class="btn btn-primary">
-            <LightningIcon size={16} weight="bold" />
+            <LightningIcon size={16} weight="bold" aria-hidden />
             安装 cf
           </a>
           <a href="/docs" class="btn btn-ghost">
             阅读文档
-            <ArrowRightIcon size={16} weight="bold" />
+            <ArrowRightIcon size={16} weight="bold" aria-hidden />
           </a>
         </div>
       </div>
@@ -164,7 +164,12 @@ const coverage = ["Workers", "D1", "R2", "KV", "DNS", "WAF", "Access", "Pages", 
         </ul>
 
         <div class="mt-7 flex items-start gap-3 rounded-xl border border-ember-500/25 bg-ember-500/8 p-4">
-          <CheckCircleIcon size={18} weight="bold" className="mt-0.5 shrink-0 text-ember-500" />
+          <CheckCircleIcon
+                    size={18}
+                    weight="bold"
+                    aria-hidden
+                    className="mt-0.5 shrink-0 text-ember-500"
+                  />
           <p class="text-[13.5px] leading-relaxed text-fog-300">
             在 cf 中，命名与参数由同一份模式决定，命令之间不再各说各话。
           </p>
@@ -197,7 +202,7 @@ const coverage = ["Workers", "D1", "R2", "KV", "DNS", "WAF", "Access", "Pages", 
               style={`--reveal-step:${index}`}
             >
               <div class="flex items-center gap-2.5">
-                <cell.icon size={18} weight="bold" className="text-ember-500" />
+                <cell.icon size={18} weight="bold" aria-hidden className="text-ember-500" />
                 <h3 class="text-[15px] font-semibold tracking-tight text-fog-100">
                   {cell.title}
                 </h3>
@@ -209,7 +214,7 @@ const coverage = ["Workers", "D1", "R2", "KV", "DNS", "WAF", "Access", "Pages", 
               {cell.visual === "search" && (
                 <div class="mt-6 grid gap-2">
                   <div class="flex items-center gap-2 rounded-full border border-line bg-ink-850 px-3.5 py-2">
-                    <MagnifyingGlassIcon size={14} weight="bold" className="text-fog-600" />
+                    <MagnifyingGlassIcon size={14} weight="bold" aria-hidden className="text-fog-600" />
                     <span class="font-mono text-[12px] text-fog-300">
                       cf cli search "create D1 database"
                     </span>
@@ -295,7 +300,7 @@ const coverage = ["Workers", "D1", "R2", "KV", "DNS", "WAF", "Access", "Pages", 
             class="mt-7 inline-flex items-center gap-2 text-sm font-medium text-ember-400 transition-colors hover:text-ember-500"
           >
             查看配置指南
-            <ArrowRightIcon size={15} weight="bold" />
+            <ArrowRightIcon size={15} weight="bold" aria-hidden />
           </a>
         </div>
 
@@ -318,7 +323,7 @@ const coverage = ["Workers", "D1", "R2", "KV", "DNS", "WAF", "Access", "Pages", 
           class="inline-flex items-center gap-2 text-sm font-medium text-ember-400 transition-colors hover:text-ember-500"
         >
           迁移指南
-          <ArrowRightIcon size={15} weight="bold" />
+          <ArrowRightIcon size={15} weight="bold" aria-hidden />
         </a>
       </div>
 
@@ -364,7 +369,7 @@ const coverage = ["Workers", "D1", "R2", "KV", "DNS", "WAF", "Access", "Pages", 
             <div class="mt-6 flex flex-wrap gap-3">
               <a href="/docs/install" class="btn btn-primary">
                 安装并登录
-                <ArrowRightIcon size={16} weight="bold" />
+                <ArrowRightIcon size={16} weight="bold" aria-hidden />
               </a>
               <a href="/docs/quickstart" class="btn btn-ghost">部署第一个 Worker</a>
             </div>

@@ -45,6 +45,7 @@ export default function Callout({
         <Icon
           size={16}
           weight="bold"
+          aria-hidden
           className={variant === "warn" ? "text-ember-500" : "text-fog-500"}
         />
         <span className="font-mono text-[11px] uppercase tracking-[0.14em] text-fog-500">

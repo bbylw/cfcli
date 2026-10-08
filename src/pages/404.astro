@@ -1,6 +1,13 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
 import { ArrowRightIcon, MagnifyingGlassIcon } from "@phosphor-icons/react";
+
+const shortcuts = [
+  { href: "/docs/install", title: "安装与登录", hint: "全局安装并登录账号" },
+  { href: "/docs/quickstart", title: "部署第一个 Worker", hint: "创建项目并部署上线" },
+  { href: "/docs/commands", title: "命令参考", hint: "按产品浏览全部命令" },
+  { href: "/docs/search", title: "用自然语言找命令", hint: "描述任务，找到命令" },
+];
 ---
 
 <BaseLayout
@@ -9,28 +16,52 @@ import { ArrowRightIcon, MagnifyingGlassIcon } from "@phosphor-icons/react";
   noindex
 >
   <div class="shell grid min-h-[62dvh] place-items-center py-20">
-    <div class="max-w-[52ch] text-center">
+    <div class="w-full max-w-[60ch] text-center">
       <p class="font-mono text-[12px] uppercase tracking-[0.18em] text-fog-600">
         404
       </p>
       <h1
-        class="mt-5 text-[2rem] font-semibold leading-[1.15] tracking-tight text-fog-100 md:text-[2.6rem]"
+        class="headline mt-5 text-[2rem] font-semibold leading-[1.15] tracking-tight text-fog-100 md:text-[2.6rem]"
       >
         没有找到这个页面
       </h1>
-      <p class="mt-5 text-[15px] leading-relaxed text-fog-500">
+      <p class="mx-auto mt-5 max-w-[44ch] text-[15px] leading-relaxed text-fog-500">
         链接可能已经变化，或者地址输入有误。可以从文档重新找起。
       </p>
       <div class="mt-9 flex flex-wrap justify-center gap-3">
         <a href="/docs" class="btn btn-primary">
-          <MagnifyingGlassIcon size={16} weight="bold" />
+          <MagnifyingGlassIcon size={16} weight="bold" aria-hidden />
           浏览文档
         </a>
         <a href="/" class="btn btn-ghost">
           返回首页
-          <ArrowRightIcon size={16} weight="bold" />
+          <ArrowRightIcon size={16} weight="bold" aria-hidden />
         </a>
       </div>
+
+      <ul class="mt-12 grid gap-px text-left sm:grid-cols-2">
+        {shortcuts.map((item) => (
+          <li>
+            <a
+              href={item.href}
+              class="group flex items-baseline justify-between gap-4 border-b border-line py-3.5"
+            >
+              <span class="min-w-0">
+                <span class="block text-[14.5px] text-fog-100 transition-colors group-hover:text-ember-400">
+                  {item.title}
+                </span>
+                <span class="mt-0.5 block text-[12.5px] text-fog-600">{item.hint}</span>
+              </span>
+              <ArrowRightIcon
+                size={14}
+                weight="bold"
+                aria-hidden
+                className="shrink-0 self-center text-fog-600 transition-all duration-200 group-hover:translate-x-0.5 group-hover:text-ember-400"
+              />
+            </a>
+          </li>
+        ))}
+      </ul>
     </div>
   </div>
 </BaseLayout>

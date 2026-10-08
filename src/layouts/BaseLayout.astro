@@ -97,7 +97,7 @@ const socialImage = new URL(image, origin);
 
     <div class="atmos-noise" aria-hidden="true"></div>
 
-    <div class="border-b border-line bg-ink-900/60">
+    <div class="border-b border-line bg-ink-900/60 print:hidden">
       <div class="shell flex flex-wrap items-center justify-center gap-x-3 gap-y-1 py-2.5 text-center">
         <p class="text-[13px] text-fog-500">
           cf 公开测试版现已发布，完整映射整个 Cloudflare API。
@@ -107,7 +107,7 @@ const socialImage = new URL(image, origin);
           class="inline-flex items-center gap-1 text-[13px] font-medium text-ember-400 transition-colors hover:text-ember-500"
         >
           阅读发布公告
-          <ArrowRightIcon size={13} weight="bold" />
+          <ArrowRightIcon size={13} weight="bold" aria-hidden />
         </a>
       </div>
     </div>
@@ -120,6 +120,7 @@ const socialImage = new URL(image, origin);
 
     <script>
       const targets = document.querySelectorAll<HTMLElement>("[data-reveal]");
+
       const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
       // 声明观察器已就位，让内联脚本的兜底定时器失效
@@ -140,6 +141,12 @@ const socialImage = new URL(image, origin);
         );
         targets.forEach((el) => observer.observe(el));
       }
+    </script>
+
+    <script>
+      import { initProseEnhancements } from "../scripts/prose";
+
+      initProseEnhancements();
     </script>
   </body>
 </html>

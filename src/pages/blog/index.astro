@@ -42,7 +42,7 @@ const posts = (await getCollection("blog")).sort(
                     {formatDate(post.data.publishedAt)}
                   </time>
                   <span class="flex items-center gap-1 md:hidden">
-                    <ClockIcon size={12} weight="bold" />
+                    <ClockIcon size={12} weight="bold" aria-hidden />
                     {post.data.minutes} 分钟
                   </span>
                 </div>
@@ -59,13 +59,14 @@ const posts = (await getCollection("blog")).sort(
                     <ArrowRightIcon
                       size={13}
                       weight="bold"
+                      aria-hidden
                       className="transition-transform duration-200 group-hover:translate-x-0.5"
                     />
                   </span>
                 </div>
 
                 <span class="hidden shrink-0 items-center gap-1.5 font-mono text-[11.5px] text-fog-600 md:flex">
-                  <ClockIcon size={12} weight="bold" />
+                  <ClockIcon size={12} weight="bold" aria-hidden />
                   {post.data.minutes} 分钟
                 </span>
               </a>

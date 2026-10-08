@@ -57,11 +57,11 @@ const isActive = (href: string) =>
         class="text-fog-500 transition-colors duration-200 hover:text-fog-100"
         aria-label="在 GitHub 上查看 cf"
       >
-        <GithubLogoIcon size={20} weight="bold" />
+        <GithubLogoIcon size={20} weight="bold" aria-hidden />
       </a>
       <a href="/docs/install" class="btn btn-primary">
         安装 cf
-        <ArrowUpRightIcon size={15} weight="bold" />
+        <ArrowUpRightIcon size={15} weight="bold" aria-hidden />
       </a>
     </div>
 
@@ -73,8 +73,8 @@ const isActive = (href: string) =>
       aria-controls="nav-mobile"
       aria-label="打开导航菜单"
     >
-      <ListIcon id="nav-icon-open" size={20} weight="bold" className="block" />
-      <XIcon id="nav-icon-close" size={20} weight="bold" className="hidden" />
+      <ListIcon id="nav-icon-open" size={20} weight="bold" aria-hidden className="block" />
+      <XIcon id="nav-icon-close" size={20} weight="bold" aria-hidden className="hidden" />
     </button>
   </div>
 
