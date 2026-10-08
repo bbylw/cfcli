@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <mask id="cf-cut">
+    <rect x="2" y="2" width="60" height="60" rx="15" fill="#ffffff" />
+    <g fill="none" stroke="#000000" stroke-linecap="round">
+      <path d="M 29.1 26.7 A 9.5 9.5 0 1 0 29.1 41.3" stroke-width="7" />
+      <path d="M 44 19.5 C 48 19.5 50 21.5 50 25" stroke-width="5" />
+      <path d="M 44 19.5 V 46" stroke-width="7" />
+      <path d="M 36.5 31 H 50.5" stroke-width="6.5" />
+    </g>
+  </mask>
+  <rect x="2" y="2" width="60" height="60" rx="15" fill="#000000" mask="url(#cf-cut)" />
+</svg>

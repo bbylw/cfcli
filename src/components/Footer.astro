@@ -1,5 +1,6 @@
 ---
 import { GithubLogoIcon, ArrowUpRightIcon } from "@phosphor-icons/react";
+import Logo from "./Logo.astro";
 
 const year = new Date().getFullYear();
 
@@ -45,10 +46,7 @@ const columns = [
   <div class="shell grid gap-12 py-14 md:grid-cols-[1.2fr_2fr]">
     <div class="max-w-sm">
       <div class="flex items-center gap-2.5">
-        <span
-          class="grid h-8 w-8 place-items-center rounded-[10px] border border-ember-500/40 bg-ember-500/12 font-mono text-[13px] font-bold text-ember-500"
-          aria-hidden="true">cf</span
-        >
+        <Logo />
         <span class="font-mono text-sm text-fog-100">cf.cli</span>
       </div>
       <p class="mt-4 text-sm leading-relaxed text-fog-500">

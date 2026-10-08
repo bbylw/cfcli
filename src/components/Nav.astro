@@ -1,5 +1,6 @@
 ---
 import { GithubLogoIcon, ArrowUpRightIcon, ListIcon, XIcon } from "@phosphor-icons/react";
+import Logo from "./Logo.astro";
 
 // 去掉结尾斜杠，与链接写法保持一致（构建产物是 /docs/commands/）
 const path = Astro.url.pathname.replace(/\/+$/, "");
@@ -20,10 +21,7 @@ const isActive = (href: string) =>
 >
   <div class="shell flex h-16 items-center justify-between gap-6">
     <a href="/" class="group flex items-center gap-2.5" aria-label="cf 首页">
-      <span
-        class="grid h-8 w-8 place-items-center rounded-[10px] border border-ember-500/40 bg-ember-500/12 font-mono text-[13px] font-bold text-ember-500"
-        aria-hidden="true">cf</span
-      >
+      <Logo />
       <span class="font-mono text-sm font-medium tracking-tight text-fog-100"
         >cf<span class="text-fog-600">.cli</span></span
       >
