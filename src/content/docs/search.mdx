@@ -1,0 +1,65 @@
+---
+title: 用自然语言找命令
+description: 用 cf cli search 描述任务、用 cf schema 检查请求，再用 --dry-run 安全预演。
+group: 智能体
+order: 11
+tag: 重点
+featured: true
+---
+
+import Callout from "../../components/Callout.tsx";
+
+在有近三千条可能路径的 CLI 里，找到正确的那一条本身就是问题。`cf cli search` 就是为此设计的：用自然语言描述任务，一个小型搜索索引会根据 API 描述与参数返回合适的命令。
+
+## 搜索
+
+```sh
+cf cli search "create a DNS record"
+```
+
+- 在**本地**运行，不需要凭据，也不产生 API 请求。
+- 把整段任务当作**单个参数**，所以要用引号包起来。
+- 返回 **JSON 数组**，最多五条匹配，最佳匹配在前。
+- 每一条包含 `command` 与 `summary`。
+
+## 检查请求
+
+选中命令后，先看它会发送什么：
+
+```sh
+cf schema d1 create
+```
+
+输出描述该命令的 API 请求：
+
+| 字段 | 含义 |
+| --- | --- |
+| `operationId` | 对应的 API 操作标识 |
+| `httpMethod` | HTTP 方法 |
+| `path` | 请求路径 |
+| `pathParams` | 路径参数及其类型、是否必填 |
+| `queryParams` | 查询参数及其类型、是否必填 |
+| `hasRequestBody` | 是否带请求体 |
+| `requestBodyFields` | 请求体字段的名称、类型、是否必填与说明 |
+
+路径与查询参数使用 API 名称，例如 `account_id`。`requestBodyFields` 列出命令同时作为选项接受的请求体字段，对象内部的字段会得到组合名称，例如 `read_replication.mode` 对应 `read-replication-mode`。某些请求体的列表可能不完整或为空，此时用 `--body` 传入完整请求体。
+
+## 预演
+
+```sh
+cf d1 create --name my-database --dry-run
+```
+
+`--dry-run` 把请求以 JSON 打印而不发送，不需要凭据。确认无误后去掉该参数正式运行。
+
+## 自动注入的提示
+
+`cf` 的根级与分组 `--help` 输出开头会提醒智能体先使用 `cf cli search`。当智能体第一次运行 `--help` 时就会看到这条提示，因此通常无需额外配置。
+
+<Callout variant="tip">
+  想自己浏览而不是搜索时，可以给 `cf`、给某个产品（如 `cf dns`）或给任意命令加上 `--help`。
+</Callout>
+
+## 拼错命令时
+
+如果输入了不存在的命令，`cf` 会列出最接近的匹配，帮助快速纠正。对于需要人工判断的操作，例如购买域名，`cf` 会把 API 的要求拆解成一系列经过校验的输入，你可以像填表一样逐步完成。

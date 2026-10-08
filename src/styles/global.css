@@ -1,0 +1,400 @@
+@import "tailwindcss";
+
+/* ============================================================
+   主题令牌：单一深色主题锁定 (Page Theme Lock)
+   强调色只有一种：Cloudflare 橙。中性色统一为冷灰。
+   ============================================================ */
+@theme {
+  --color-ink-950: #0a0a0c;
+  --color-ink-900: #101014;
+  --color-ink-850: #14141a;
+  --color-ink-800: #191920;
+  --color-ink-700: #22222b;
+  --color-ink-600: #2e2e39;
+
+  --color-fog-100: #f4f4f6;
+  --color-fog-300: #c6c6d0;
+  --color-fog-500: #9a9aa6;
+  /* 4.6:1 on --color-ink-900，满足 WCAG AA 正文对比度要求 */
+  --color-fog-600: #7d7d89;
+
+  --color-ember-400: #ffa04d;
+  --color-ember-500: #f6821f;
+  --color-ember-600: #d96a10;
+
+  --color-line: #23232c;
+
+  --font-display:
+    "Space Grotesk Variable", "PingFang SC", "Hiragino Sans GB",
+    "Microsoft YaHei", "Noto Sans CJK SC", system-ui, sans-serif;
+  --font-mono:
+    "JetBrains Mono Variable", ui-monospace, SFMono-Regular, Menlo, Consolas,
+    "PingFang SC", "Microsoft YaHei", monospace;
+
+  --radius-container: 16px;
+  --radius-control: 999px;
+
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* ============================================================
+   基础层
+   ============================================================ */
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    background-color: var(--color-ink-950);
+    color: var(--color-fog-100);
+    font-family: var(--font-display);
+    font-feature-settings: "cv11", "ss01";
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+
+  ::selection {
+    background: var(--color-ember-500);
+    color: #14100b;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-ember-500);
+    outline-offset: 3px;
+    border-radius: 4px;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    text-wrap: balance;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+
+  code,
+  kbd,
+  pre,
+  samp {
+    font-family: var(--font-mono);
+    font-feature-settings: "calt" 0;
+  }
+}
+
+/* ============================================================
+   可复用组件类
+   ============================================================ */
+@layer components {
+  .shell {
+    width: 100%;
+    max-width: 1240px;
+    margin-inline: auto;
+    padding-inline: 1.25rem;
+  }
+
+  @media (min-width: 768px) {
+    .shell {
+      padding-inline: 2rem;
+    }
+  }
+
+  /* 形态锁定：容器 16px，控件 pill。规则统一，不混用。 */
+  .panel {
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-container);
+    background: color-mix(in oklab, var(--color-ink-900) 82%, transparent);
+    /* 容器内含可滚动代码块时，避免撑破网格轨道 */
+    min-width: 0;
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    border-radius: var(--radius-control);
+    padding: 0.7rem 1.35rem;
+    font-size: 0.9rem;
+    font-weight: 500;
+    line-height: 1;
+    white-space: nowrap;
+    transition:
+      transform 0.18s var(--ease-out-expo),
+      background-color 0.18s var(--ease-out-expo),
+      border-color 0.18s var(--ease-out-expo),
+      color 0.18s var(--ease-out-expo);
+  }
+
+  .btn:active {
+    transform: scale(0.975);
+  }
+
+  .btn-primary {
+    background: var(--color-ember-500);
+    color: #17110a;
+    font-weight: 600;
+  }
+
+  .btn-primary:hover {
+    background: var(--color-ember-400);
+  }
+
+  .btn-ghost {
+    border: 1px solid var(--color-ink-600);
+    color: var(--color-fog-100);
+    background: transparent;
+  }
+
+  .btn-ghost:hover {
+    border-color: var(--color-fog-600);
+    background: var(--color-ink-850);
+  }
+
+  .rule {
+    border-top: 1px solid var(--color-line);
+  }
+}
+
+/* ============================================================
+   氛围：噪点 + 网格 + 光晕
+   ============================================================ */
+.atmos-noise {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  pointer-events: none;
+  opacity: 0.035;
+  mix-blend-mode: screen;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+.atmos-grid {
+  background-image:
+    linear-gradient(to right, rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
+  background-size: 64px 64px;
+  mask-image: radial-gradient(ellipse 90% 70% at 50% 0%, #000 25%, transparent 78%);
+}
+
+.atmos-glow {
+  position: absolute;
+  border-radius: 999px;
+  filter: blur(90px);
+  pointer-events: none;
+}
+
+/* ============================================================
+   滚动入场：由 IntersectionObserver 驱动，尊重减少动效
+   ============================================================ */
+[data-reveal] {
+  opacity: 0;
+  transform: translate3d(0, 18px, 0);
+  transition:
+    opacity 0.65s var(--ease-out-expo),
+    transform 0.65s var(--ease-out-expo);
+  transition-delay: calc(var(--reveal-step, 0) * 70ms);
+  will-change: opacity, transform;
+}
+
+[data-reveal].is-revealed {
+  opacity: 1;
+  transform: none;
+  will-change: auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  [data-reveal] {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+/* 光标闪烁 */
+@keyframes caret {
+  0%,
+  49% {
+    opacity: 1;
+  }
+  50%,
+  100% {
+    opacity: 0;
+  }
+}
+
+.caret {
+  display: inline-block;
+  width: 0.55ch;
+  height: 1.05em;
+  translate: 0 0.14em;
+  background: var(--color-ember-500);
+  animation: caret 1.05s steps(1) infinite;
+}
+
+@keyframes drift {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(0, -14px, 0) scale(1.04);
+  }
+}
+
+.drift-slow {
+  animation: drift 14s ease-in-out infinite;
+}
+
+/* ============================================================
+   正文 (MDX / 文档) 排版
+   ============================================================ */
+.prose-cf {
+  color: var(--color-fog-300);
+  font-size: 1rem;
+  line-height: 1.85;
+  max-width: 68ch;
+}
+
+.prose-cf > * + * {
+  margin-top: 1.15rem;
+}
+
+.prose-cf h2 {
+  color: var(--color-fog-100);
+  font-size: 1.6rem;
+  margin-top: 3rem;
+  scroll-margin-top: 6rem;
+}
+
+.prose-cf h3 {
+  color: var(--color-fog-100);
+  font-size: 1.2rem;
+  margin-top: 2.25rem;
+  scroll-margin-top: 6rem;
+}
+
+.prose-cf strong {
+  color: var(--color-fog-100);
+  font-weight: 600;
+}
+
+.prose-cf a {
+  color: var(--color-ember-400);
+  text-decoration: none;
+  border-bottom: 1px solid color-mix(in oklab, var(--color-ember-500) 42%, transparent);
+}
+
+.prose-cf a:hover {
+  border-bottom-color: var(--color-ember-400);
+}
+
+.prose-cf ul,
+.prose-cf ol {
+  padding-left: 1.35rem;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.prose-cf ul {
+  list-style: none;
+  padding-left: 1.1rem;
+}
+
+.prose-cf ul > li {
+  position: relative;
+}
+
+.prose-cf ul > li::before {
+  content: "";
+  position: absolute;
+  left: -1.05rem;
+  top: 0.78em;
+  width: 5px;
+  height: 5px;
+  background: var(--color-ember-500);
+  border-radius: 1px;
+  rotate: 45deg;
+}
+
+.prose-cf ol {
+  list-style: decimal;
+}
+
+.prose-cf ol > li::marker {
+  color: var(--color-fog-600);
+  font-family: var(--font-mono);
+  font-size: 0.85em;
+}
+
+.prose-cf :not(pre) > code {
+  background: var(--color-ink-800);
+  border: 1px solid var(--color-line);
+  border-radius: 6px;
+  padding: 0.12em 0.4em;
+  font-size: 0.86em;
+  color: var(--color-ember-400);
+}
+
+.prose-cf pre {
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-container);
+  padding: 1.15rem 1.25rem;
+  font-size: 0.86rem;
+  line-height: 1.7;
+  overflow-x: auto;
+}
+
+.prose-cf blockquote {
+  border-left: 2px solid var(--color-ember-500);
+  padding-left: 1rem;
+  color: var(--color-fog-500);
+}
+
+/* Callout 是 .prose-cf 的直接子元素，必须自行声明外边距：
+   `.prose-cf > * + *` 的特异性更高，会覆盖组件里的 margin 工具类。 */
+.prose-cf > .callout {
+  margin-top: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.prose-cf table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.prose-cf th {
+  text-align: left;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-fog-500);
+  padding: 0 0.9rem 0.7rem 0;
+  border-bottom: 1px solid var(--color-line);
+}
+
+.prose-cf td {
+  padding: 0.7rem 0.9rem 0.7rem 0;
+  border-bottom: 1px solid var(--color-line);
+  vertical-align: top;
+}

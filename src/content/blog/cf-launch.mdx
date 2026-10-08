@@ -1,0 +1,113 @@
+---
+title: "cf 正式发布：面向整个 Cloudflare API 的智能体驱动的 CLI"
+description: 我们正式发布 cf，一个完整映射 Cloudflare API 并支持以 TypeScript 进行程序化配置的命令行工具。
+publishedAt: 2026-09-29
+author: Matt "TK" Taylor
+role: Cloudflare
+minutes: 8
+---
+
+在过去一年里，AI 智能体对 Wrangler 的使用量急剧攀升。到了 2026 年 3 月，AI 智能体贡献了 Wrangler 使用量的四分之一，而前一年的占比还是个位数百分比。上周，智能体的使用率已经达到 48%。
+
+智能体是更高产的用户：它们每天使用的不同命令数量几乎翻倍，使用六个或更多命令的可能性几乎是四倍。
+
+智能体喜爱 CLI。但 Wrangler 仅提供约 280 种操作的命令，而 Cloudflare 提供的操作多达数千种。今天我们正式推出全新 CLI：`cf`，让 AI 智能体能够使用每一个 Cloudflare 产品。
+
+`cf` 是专为下一代软件开发打造的 CLI：
+
+- 智能体可以通过专属搜索与引导找到所需的命令。
+- JSON 是默认接口，对人类美化输出，对智能体压缩，从而最大限度节省上下文。
+- `cloudflare.config.ts` 是 Cloudflare 全平台的全新配置格式，从 Workers 开始，把 TypeScript 的安全性与准确性带给你和智能体的 LSP。
+- Vite 成为默认工具，带来业界领先的本地开发服务器与面向开发者和框架作者的插件套件。
+
+## 让智能体访问整个 Cloudflare API
+
+如果 AI 智能体能做到 Cloudflare 能做的一切，会怎样？这正是年初提出的问题：智能体越来越强大，但通过 Cloudflare CLI 能完成的事情仍然有限。
+
+Wrangler 是手工构建的，每个产品团队都以自己的方式贡献命令体验。即便只有约 280 条命令路径，在团队之间推行统一模式也几乎不可能。`d1 info`、`hyperdrive get`、`workflows describe` 之间的术语不一致，因为每个团队在不同时期形成了各自的实践。部分团队用数千行代码构建了完全自定义的体验，但这些体验极少被使用，而且不同团队对同一问题采用了不同解法。
+
+我们希望一次性完成大规模扩展，同时把现有内容标准化。Forge 是 Cloudflare 全新的统一 API 生成流水线，让这成为可能：它直接从支撑 API 文档与 SDK 生成的 API 模式中生成 CLI 命令。我们提供的所有内容都有 OpenAPI 模式，只需添加少量额外信息进行注解，就能作为 Forge 生成 CLI 的来源。
+
+这使 `cf` 从 Wrangler 多年积累的约 280 个功能，扩展到覆盖 Cloudflare API 全部超过 3,000 个操作。
+
+现在，只需把 `cf` 交给你的智能体，让它设置 Worker、部署、监控、使用 Cloudflare Access 进行保护、购买域名，并通过 WAF 防护，全部通过单一工具完成。
+
+## 为从未使用过 cf 的智能体而构建
+
+Wrangler 有一个优势：多年的文档、博客与第三方指南已被纳入大语言模型的训练过程。但这也带来同样的劣势：改变 Wrangler 的工作方式现在与已学习的行为相悖，而鉴于我们希望实现的改进规模，重大变更是不可避免的。
+
+引入一个智能体从未见过的新 CLI 听起来像巨大的颠覆，但实际上这是最干净的做法。由于我们的设计决策、可以进行的上下文注入，以及可以附加的 `AGENTS.md` 文件，以这种方式切换反而比让智能体理解它所熟悉的工具的两个版本之间的主要差异更少令人困惑。
+
+## 智能体需要过滤 JSON，而不是查看表格
+
+当智能体使用 Wrangler 时，它们会在每个命令后附加 `--json`，再经常用 `jq` 过滤输出以提取字段。但 Wrangler 中只有部分命令支持 `--json`，许多命令返回的是专为人类在终端查看而设计的 Unicode 表格。智能体能够解读这些表格，但代价是比 `jq` 过滤器更多的时间与 token。
+
+在 `cf` 中我们采取了相反的立场：智能体只需要 JSON，如果智能体是这个工具未来的主要用户，那么 JSON 就应该是默认值。对于极少由人类访问的绝大多数命令来说，这显然是正确的选择。
+
+作为人类用户，你实际上与直接使用它隔了一层。让智能体轻松过滤结果，再以你要求的任何格式返回过滤后的列表，比提供你可能永远不会直接阅读的表格更为可取。
+
+如果你确实需要真人输入，比如搜索要购买的域名，那么 `cf` 会把 API 的要求拆解成一系列经过校验的输入，你只需填表即可；当然，你也可以直接让智能体来做。
+
+## 智能体可以自行找到正确的命令
+
+在一个有 3,000 条可能路径的 CLI 中，智能体如何才能快速找到所需操作而不让上下文爆炸？为此我们加入了 `cf cli search`。
+
+它允许智能体用自然语言描述需要做什么，一个小型搜索索引会根据 API 描述与参数给出合适的命令列表。当智能体第一次运行 `--help` 时，我们会自动告知它这个命令。
+
+## 对智能体进行类型检查的配置
+
+新的配置格式基于 TypeScript，人类与智能体都易于解析，并允许你以编程方式编写配置。
+
+类型化配置对智能体极为有用。我们发现，即使没有任何编程式配置格式的先验背景，智能体也能轻松识别并按需编辑配置，即便像 `env` 这样相比 Wrangler 中同名特性已发生重大变化的元素也不例外。所有使用 LSP 插件的智能体，例如 Claude Code 与 Codex，都能从在上下文中解读更多配置信息中获益，从而给出更精准的建议。
+
+相比之下，TOML 没有可访问的模式，JSONC 虽然有关联模式，但智能体很少使用。
+
+Cloudflare 内部一些 Wrangler 配置文件已从超过 5,000 行（每位开发者有许多自定义环境）压缩了 40%，成为能更高效地构建每位开发者配置的工厂文件。这是通过从同一通用基础以编程方式定义每个环境实现的，而不是像 Wrangler 中常见的那样复制 `env` 块。
+
+```ts
+import { bindings, defineConfig } from "cf/config";
+import * as entrypoint from "./index.js" with { type: "cf-worker" };
+
+export default defineConfig(({ mode }) => ({
+  worker: {
+    name: "example-worker",
+    entrypoint,
+    compatibilityDate: "2026-09-27",
+    env: {
+      Environment: bindings.text(`This is ${mode} environment`),
+    },
+  },
+}));
+```
+
+你可以通过 `cf migrate` 把 Cloudflare Worker 迁移到这个新格式。
+
+`bindings` 让智能体能便捷地发现开发平台提供的各项能力，包括环境变量、存储、数据库与队列，全部可以由编辑器自动补全并解释。同样，`triggers` 提供了一种为 Worker 定义路由、队列、计划与邮件触发器的新方式：所有可能触发 Worker 运行的操作集中在单一配置块中，而不是以往那样零散地分布在配置文件各处。
+
+`defineConfig.worker` 只是一个开始。我们创建 `cloudflare.config.ts` 的初衷，是让它成为统一管理整个 Cloudflare 的方式。你所需的每一款产品，连同通过 `cf` 向其开放的 API，都将能够以类型安全的配置方式表达。很快你将能通过这个配置文件配置整个策略、设置区域、配置 DNS 等等。
+
+## 业界领先的开发体验
+
+当 Wrangler 开始构建 JavaScript Workers 时，Vite 还不存在。我们在 Wrangler 中使用 esbuild 来打包 Worker，而在 `:8787` 上提供的开发服务器由 Wrangler 团队自行构建，任何修改都意味着要深入 Miniflare 等 Cloudflare 专属本地工具的内部。
+
+Vite 是巨大的进步：丰富的插件生态、具备 HMR 的开发服务器，以及使用基于 Rust 的 Rolldown 进行 tree-shaking 构建。你在 Vite 中能做的一切，都可以用 Cloudflare Vite 插件实现。
+
+结合 Vitest 插件，它提供了一个与 Cloudflare Workers 运行时匹配的一体化开发与测试环境，让你直接访问绑定与平台 API。
+
+`cf` 默认基于 Vite 构建。大多数 Worker 都能在 AI 智能体的协助下轻松迁移；其余的可能需要更多时间，这也是为什么 `cf` 会继续把需要 esbuild 的 JavaScript Worker 以及 Rust 和 Python Worker 的开发和部署委托给 Wrangler。
+
+## 从 Wrangler 迁移
+
+把 Worker 从 Wrangler 迁移就像运行 `cf migrate` 一样简单。
+
+```sh
+cf migrate
+```
+
+已经使用 Vite 构建的 Worker 会自动转换为 `cloudflare.config.ts`。如果你的 Worker 依赖 Wrangler 的 esbuild，`cf` 会继续把构建委托给 Wrangler。
+
+当公开测试版结束时，我们将发布 Wrangler 的最终主要版本，引导你和你的智能体使用 `cf`。测试版结束后，我们会继续为 Wrangler 提供 18 个月的维护支持，让你有充足的时间迁移。
+
+你也可以运行 `cf init` / `cf deploy` 自动为 Cloudflare 配置新项目，它会为你安装 Cloudflare Vite 插件并创建配置文件。静态网站仍然不需要配置文件即可启动，部署它们就像在项目中运行 `cf deploy` 一样简单。
+
+`cf` 是开源项目，如有问题请反馈至 GitHub 仓库。

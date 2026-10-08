@@ -1,0 +1,122 @@
+---
+title: 面向编码智能体
+description: 为编码智能体配置 cf，并帮助它们找到、检查并安全地运行正确的命令。
+group: 智能体
+order: 10
+tag: 重点
+featured: true
+---
+
+import Callout from "../../components/Callout.tsx";
+
+编码智能体可以用 `cf` 操作你的 Cloudflare 账号。命令返回 JSON 并自行描述输入，因此智能体不需要预先了解 `cf` 就能找到并运行正确的命令。
+
+## 为智能体配置 cf
+
+**1. 全局安装 `cf`**，让每个智能体会话都能调用它：
+
+```sh
+npm install --global cf
+```
+
+在把 `cf` 装为依赖的项目内，全局命令会转去运行项目里的这一份。
+
+**2. 登录：**
+
+```sh
+cf auth login
+```
+
+登录会打开浏览器页面等待你批准，所以这一步需要你亲自完成。对于无人值守的智能体，见下文「为无人值守的智能体认证」。
+
+**3. 让智能体优先使用 `cf`。** 在你的用户级 `AGENTS.md`、`CLAUDE.md` 或等价的指令文件中加入这一句：
+
+```md
+When interacting with Cloudflare, use the `cf` CLI unless the project has a
+Wrangler configuration file.
+```
+
+仍在用 `wrangler.jsonc` 或 `wrangler.toml` 的项目继续由 Wrangler 处理，其余所有 Cloudflare 任务都走 `cf`。
+
+## 帮助智能体找到命令
+
+`cf` 有超过 2,900 条命令。与其让智能体逐个产品读帮助文档，不如让它描述任务、检查最佳匹配，然后再运行。
+
+**1. 描述任务来搜索命令：**
+
+```sh
+cf cli search "create D1 database"
+```
+
+搜索在本地运行，不需要凭据。任务要放在引号里：`cf cli search` 把整段任务当作单个参数，未加引号的后续单词会被当作未知命令。它返回 JSON 数组，最多五条匹配，最佳匹配在前，每条包含命令与简短说明：
+
+```json
+[
+  { "command": "cf d1 create", "summary": "Create D1 Database" },
+  { "command": "cf d1 update", "summary": "Update D1 Database" }
+]
+```
+
+**2. 检查所选命令的 API 请求：**
+
+```sh
+cf schema d1 create
+```
+
+返回的 JSON 描述该命令发送的 API 请求：`operationId`、`httpMethod`、`path`、`pathParams`、`queryParams`、`hasRequestBody` 与 `requestBodyFields`。
+
+**3. 用 `--dry-run` 预演，然后去掉它正式运行：**
+
+```sh
+cf d1 create --name my-database --dry-run
+```
+
+`cf` 的根级与分组 `--help` 输出开头会提醒智能体先使用 `cf cli search`。如果智能体输入了不存在的命令，`cf` 会列出最接近的匹配。
+
+## 读取命令输出
+
+结果以 JSON 写入标准输出，而消息（例如选中的 zone）与错误写入标准错误。当标准输出不是终端时，其中只包含结果本身，智能体可以直接解析或用 `jq` 过滤。
+
+- **列表** 打印 JSON 数组，且只返回一页。
+- **不返回数据的变更** 不向标准输出打印任何内容。
+- **原始内容**（例如 R2 对象或 Workers AI 的图片）原样写入标准输出，重定向到文件即可。
+- **JSON 输出** 始终缩进，无论在不在终端里；颜色只在终端中附加。
+
+失败的命令以非零状态退出，并把错误写到标准错误。
+
+## 安全地运行命令
+
+- **预演变更。** 加上 `--dry-run` 会把请求以 JSON 打印而不发送。预演不需要凭据。
+- **察觉被中止的删除。** 在非交互式会话中，不带 `--force` 的破坏性命令会打印 `Aborted.` 并以 `0` 退出。
+- **审查 `--force`。** 在某些命令上 `--force` 同时也是 API 参数。例如 `cf workers delete --force` 会连同其他 Worker 仍在引用的 Worker 一起删除。
+- **在支持时使用本地数据。** `--local` 只对少数本地开发支持的资源有效，主要是 KV 键、通过 `cf d1 raw` 的 D1 数据库、`cf d1 migrations list`、`cf d1 migrations apply` 以及 R2 对象。没有本地实现的命令，包括 `cf d1 query`，会直接返回错误。
+
+## 在 Wrangler 项目中工作
+
+<Callout variant="warn" title="先迁移再构建">
+  不要让智能体在只有 Wrangler 配置文件、没有 `cloudflare.config.ts` 的项目里运行 `cf dev`、`cf build` 或 `cf deploy`。这些命令可能生成一份忽略 `wrangler.jsonc` 的新配置，或者直接失败。
+</Callout>
+
+让智能体按以下步骤迁移：
+
+1. 不写文件地预演迁移：
+
+```sh
+cf migrate --dry-run
+```
+
+2. 正式执行迁移：
+
+```sh
+cf migrate
+```
+
+3. 处理生成的 `cloudflare.config.ts` 中的 `TODO(@cloudflare)` 注释，并就它无法独立决定的选择向你确认。在每一项必填内容处理完之前，构建都会失败。
+
+## 为无人值守的智能体认证
+
+无人值守的智能体（例如 CI 中）无法完成 `cf auth login`。改为设置 `CLOUDFLARE_API_TOKEN`，该 token 的优先级高于任何已保存的登录状态。
+
+## 检查本地资源
+
+当 `cf dev` 在受支持的编码智能体中运行时，开发服务器还会打印 Local Explorer API 的地址与主要路由。智能体可以通过它读写本 Worker 绑定的数据，并查询本地 trace 与日志。

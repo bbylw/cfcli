@@ -1,0 +1,90 @@
+---
+title: 在 CI 中使用 cf
+description: 用 API token、可预测的非交互行为，以及一次构建多次部署的方式在 CI 中运行 cf。
+group: 迁移与参考
+order: 33
+tag: 指南
+---
+
+import Callout from "../../components/Callout.tsx";
+
+CI 与本地最大的差别在于：没有人可以回答提示。`cf` 在探测到非交互式环境时会改用默认值，或在必须有明确答案时失败。
+
+## 使用 API token
+
+在 CI 中不要运行 `cf auth login`，改为设置：
+
+```sh
+export CLOUDFLARE_API_TOKEN=<API_TOKEN>
+export CLOUDFLARE_ACCOUNT_ID=<ACCOUNT_ID>
+```
+
+`CLOUDFLARE_API_TOKEN` 的优先级高于任何已保存的登录状态，因此它同时也是无人值守智能体的认证方式。只授予任务实际需要的权限。
+
+<Callout variant="warn" title="保管好 token">
+  不要把 API token 写入版本库。在 CI 中使用平台的密钥存储，并把 token 注入为环境变量。若使用 `.env` 文件，确认它已被 `.gitignore` 排除。
+</Callout>
+
+## 明确告知这是 CI
+
+设置 `CI=true` 可以避免交互式提示，提示会使用默认值，或在必须回答时失败。`cf` 也会自行探测常见 CI 提供方以及终端缺失的情况，但显式设置更可靠：
+
+```sh
+export CI=true
+```
+
+## 先配置，再进 CI
+
+自动配置在终端中会先展示计划改动并询问；在 CI 中它会直接应用改动并安装依赖。为了让流水线的行为可预测，建议在本地先运行：
+
+```sh
+cf init .
+```
+
+它会在不构建的前提下配置已有项目。复查改动并提交，之后再让 CI 运行构建命令。
+
+## 分阶段流水线
+
+`cf` 把构建与部署解耦，因此可以先构建一次、在后续阶段复用产物：
+
+```sh
+# 构建阶段
+cf build
+
+# 部署阶段
+cf deploy --prebuilt
+```
+
+`--prebuilt` 跳过构建，直接部署已有的 Build Output。`cf build` 不上传任何内容，也不需要凭据。
+
+要验证构建而不发送任何 API 请求：
+
+```sh
+cf deploy --dry-run
+```
+
+## 关闭遥测
+
+在 CI 中如果不希望发送匿名使用遥测：
+
+```sh
+export CF_SEND_TELEMETRY=0
+```
+
+或用更通用的：
+
+```sh
+export DO_NOT_TRACK=1
+```
+
+`DO_NOT_TRACK` 的优先级最高，即使 `CF_SEND_TELEMETRY` 已启用也能关闭遥测。
+
+## 输出与日志
+
+结果写入标准输出，进度、消息与错误写入标准错误。因此日志天然分离，可以把标准输出重定向到文件交给后续步骤处理：
+
+```sh
+cf zones list > zones.json
+```
+
+失败的命令以非零状态退出。注意一个反直觉之处：在非交互式会话中，不带 `--force` 的破坏性命令会打印 `Aborted.` 并以状态码 `0` 退出，所以退出码本身不足以证明删除成功。

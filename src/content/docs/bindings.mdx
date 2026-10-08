@@ -1,0 +1,75 @@
+---
+title: 绑定 helper
+description: 用 bindings.* 在 cloudflare.config.ts 中声明环境变量、存储、数据库与队列。
+group: 配置
+order: 21
+tag: 参考
+---
+
+import Callout from "../../components/Callout.tsx";
+
+`bindings` 让 Worker 的每一项平台能力都可发现。环境变量、存储、数据库与队列都由编辑器自动补全并给出解释，智能体也能同样受益。
+
+## 基本形态
+
+```ts
+import { bindings, defineConfig } from "cf/config";
+
+export default defineConfig(({ mode }) => ({
+  worker: {
+    name: "example-worker",
+    compatibilityDate: "2026-09-27",
+    env: {
+      API_URL: bindings.text(
+        mode === "production"
+          ? "https://example.com"
+          : "https://staging.example.com",
+      ),
+      API_TOKEN: bindings.secret(),
+      CACHE: bindings.kv({
+        id: mode === "production"
+          ? "production-namespace-id"
+          : "staging-namespace-id",
+      }),
+      DATABASE: bindings.d1({ name: `example-${mode}-database` }),
+      UPLOADS: bindings.r2({ name: `example-${mode}-uploads` }),
+      JOBS: bindings.queue<{ userId: string }>({
+        name: `example-${mode}-jobs`,
+      }),
+      AI: bindings.ai(),
+      SEARCH_INDEX: bindings.vectorize({
+        name: `example-${mode}-search`,
+      }),
+      API: bindings.worker({ worker: `example-${mode}-api` }),
+    },
+  },
+}));
+```
+
+`env` 的键就是 Worker 中 `env` 对象上的绑定名。所有绑定都用 `bindings.*` 构造，因此类型是精确的。
+
+## 可用 builder
+
+| Builder | 用途 |
+| --- | --- |
+| `bindings.text(value)` | 内联字符串值，作为文本绑定暴露 |
+| `bindings.secret()` | 密钥，不作为明文写入配置 |
+| `bindings.kv({ id })` | KV 命名空间 |
+| `bindings.d1({ name })` | D1 数据库 |
+| `bindings.r2({ name })` | R2 存储桶 |
+| `bindings.queue<T>({ name })` | 队列生产者，`T` 是消息体类型 |
+| `bindings.vectorize({ name })` | Vectorize 索引 |
+| `bindings.ai()` | Workers AI |
+| `bindings.worker({ worker })` | 对另一个 Worker 的 service binding |
+
+<Callout variant="tip" title="类型即文档">
+  `bindings.queue<{ userId: string }>` 中的泛型会一路传递到消费代码。智能体读到这里就知道消息体的形状，不需要额外说明。
+</Callout>
+
+## 省略资源标识符
+
+`cf deploy` 可以为省略了资源标识符的绑定自动创建缺失资源。注意，它不会把创建出来的标识符写回 `cloudflare.config.ts`，因此首次部署后建议把生成的 ID 手动固化到配置里。
+
+## 生成类型
+
+`cf init` 创建的项目包含 `.cloudflare/types/index.d.ts`，其中是生成的绑定与运行时类型。Vite 插件会在运行 `cf dev` 或 `cf build` 时更新它。生成的 `.gitignore` 已排除 `.cloudflare/`。

@@ -1,0 +1,36 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { ArrowRightIcon, MagnifyingGlassIcon } from "@phosphor-icons/react";
+---
+
+<BaseLayout
+  title="页面不存在"
+  description="没有找到这个页面。"
+  noindex
+>
+  <div class="shell grid min-h-[62dvh] place-items-center py-20">
+    <div class="max-w-[52ch] text-center">
+      <p class="font-mono text-[12px] uppercase tracking-[0.18em] text-fog-600">
+        404
+      </p>
+      <h1
+        class="mt-5 text-[2rem] font-semibold leading-[1.15] tracking-tight text-fog-100 md:text-[2.6rem]"
+      >
+        没有找到这个页面
+      </h1>
+      <p class="mt-5 text-[15px] leading-relaxed text-fog-500">
+        链接可能已经变化，或者地址输入有误。可以从文档重新找起。
+      </p>
+      <div class="mt-9 flex flex-wrap justify-center gap-3">
+        <a href="/docs" class="btn btn-primary">
+          <MagnifyingGlassIcon size={16} weight="bold" />
+          浏览文档
+        </a>
+        <a href="/" class="btn btn-ghost">
+          返回首页
+          <ArrowRightIcon size={16} weight="bold" />
+        </a>
+      </div>
+    </div>
+  </div>
+</BaseLayout>

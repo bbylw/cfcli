@@ -1,0 +1,88 @@
+---
+title: 用命令行管理资源
+description: 找到 zone，列出、创建与删除 DNS 记录，并用 cf cli search 找到其他命令。
+group: 开始
+order: 3
+tag: 教程
+---
+
+import Callout from "../../components/Callout.tsx";
+
+这条路径覆盖 Workers 之外的日常工作：管理 zone、DNS 记录与其他 Cloudflare 资源。
+
+## 准备工作
+
+先安装 `cf` 并登录。如果使用 API token，它需要有编辑该 zone 中 DNS 记录的权限，并且账号下已添加域名。
+
+## 找到 zone
+
+zone 作用域的命令接受 `--zone`（或 `-z`），值可以是 zone ID，也可以是域名：
+
+```sh
+cf zones list
+```
+
+输出是 JSON 数组。想看单个 zone 的细节：
+
+```sh
+cf zones get --zone example.com
+```
+
+## 列出 DNS 记录
+
+```sh
+cf dns records list --zone example.com
+```
+
+因为标准输出就是 JSON，可以直接管道给 `jq` 做筛选，不需要额外的 `--json` 参数：
+
+```sh
+cf dns records list --zone example.com | jq '.[] | select(.type == "A")'
+```
+
+## 创建 DNS 记录
+
+```sh
+cf dns records create --zone example.com \
+  --type A \
+  --name www \
+  --content 203.0.113.10
+```
+
+在真正发送请求之前，先看看 `cf` 会发什么：
+
+```sh
+cf dns records create --zone example.com --type A --name www --content 203.0.113.10 --dry-run
+```
+
+`--dry-run` 会把请求以 JSON 形式打印出来而不发送，也不需要凭据。
+
+## 删除 DNS 记录
+
+```sh
+cf dns records delete --zone example.com <RECORD_ID>
+```
+
+<Callout variant="warn" title="非交互式下的删除">
+  在非交互式会话中，不带 `--force` 的破坏性命令会向标准错误打印 `Aborted.` 并以状态码 `0` 退出。成功退出并不代表资源已被删除。
+</Callout>
+
+## 找到其他命令
+
+`cf` 有超过 2,900 条命令。与其逐个产品翻 `--help`，不如直接描述任务：
+
+```sh
+cf cli search "购买一个域名"
+```
+
+搜索会返回最多五条匹配的命令，按匹配度排序。选中之后，可以先看它的参数与请求体结构：
+
+```sh
+cf schema registrar domains create
+```
+
+`cf schema` 返回 `operationId`、`httpMethod`、`path`、`pathParams`、`queryParams`、`hasRequestBody` 与 `requestBodyFields`，每个字段都标明名称、类型与是否必填。
+
+## 需要人工确认的命令
+
+有些操作，例如购买域名，涉及表单式的必填输入。`cf` 会把 API 的要求拆解成一系列经过校验的输入，你只需要依次填写。整个过程也可以用一条命令的非交互方式完成，把命名参数按顺序串起来即可。

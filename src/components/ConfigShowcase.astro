@@ -1,0 +1,152 @@
+---
+import { Code } from "astro:components";
+
+const base = `import { bindings, defineConfig } from "cf/config";
+import * as entrypoint from "./index.js" with { type: "cf-worker" };
+
+export default defineConfig(({ mode }) => ({
+  worker: {
+    name: "example-worker",
+    entrypoint,
+    compatibilityDate: "2026-09-27",
+    env: {
+      Environment: bindings.text(\`This is \${mode} environment\`),
+    },
+  },
+}));`;
+
+const storage = `import { bindings, defineConfig } from "cf/config";
+
+export default defineConfig(({ mode }) => ({
+  worker: {
+    // ...
+    env: {
+      API_URL: bindings.text(
+        mode === "production"
+          ? "https://example.com"
+          : "https://staging.example.com",
+      ),
+      API_TOKEN: bindings.secret(),
+      CACHE: bindings.kv({
+        id: mode === "production"
+          ? "production-namespace-id"
+          : "staging-namespace-id",
+      }),
+      DATABASE: bindings.d1({ name: \`example-\${mode}-database\` }),
+      UPLOADS: bindings.r2({ name: \`example-\${mode}-uploads\` }),
+      JOBS: bindings.queue<{ userId: string }>({
+        name: \`example-\${mode}-jobs\`,
+      }),
+      AI: bindings.ai(),
+      SEARCH_INDEX: bindings.vectorize({
+        name: \`example-\${mode}-search\`,
+      }),
+      API: bindings.worker({ worker: \`example-\${mode}-api\` }),
+    },
+  },
+}));`;
+
+const triggers = `import { defineConfig, triggers } from "cf/config";
+
+export default defineConfig({
+  worker: {
+    // ...
+    triggers: [
+      triggers.fetch({ pattern: "example.com/*" }),
+      triggers.scheduled({ schedule: "0 * * * *" }),
+      triggers.queue({ name: "jobs", maxBatchSize: 10 }),
+      triggers.email({ addresses: ["support@example.com"] }),
+    ],
+  },
+});`;
+
+const tabs = [
+  { id: "worker", label: "worker", code: base, note: "一个文件描述整个 Worker" },
+  { id: "bindings", label: "bindings", code: storage, note: "所有平台能力都可自动补全" },
+  { id: "triggers", label: "triggers", code: triggers, note: "触发方式集中在一处声明" },
+];
+---
+
+<div class="min-w-0 overflow-hidden rounded-[16px] border border-line bg-ink-900">
+  <div class="flex items-center gap-2 border-b border-line bg-ink-850/60 px-3 py-2.5">
+    <span class="font-mono text-[12px] text-fog-500">cloudflare.config.ts</span>
+    <span class="h-1 w-1 rounded-full bg-fog-600" aria-hidden="true"></span>
+    <span class="font-mono text-[11px] text-fog-600">TypeScript</span>
+  </div>
+
+  <div
+    class="flex gap-1 overflow-x-auto border-b border-line px-2 py-2"
+    role="tablist"
+    aria-label="配置示例"
+  >
+    {
+      tabs.map((tab, index) => (
+        <button
+          type="button"
+          role="tab"
+          id={`cfg-tab-${tab.id}`}
+          aria-selected={index === 0}
+          aria-controls={`cfg-panel-${tab.id}`}
+          data-cfg-tab={tab.id}
+          class="shrink-0 rounded-full px-3.5 py-1.5 font-mono text-[12px] text-fog-600 transition-colors duration-200 hover:text-fog-300 aria-selected:bg-ink-800 aria-selected:text-fog-100"
+        >
+          {tab.label}
+        </button>
+      ))
+    }
+  </div>
+
+  {
+    tabs.map((tab, index) => (
+      <div
+        id={`cfg-panel-${tab.id}`}
+        role="tabpanel"
+        aria-labelledby={`cfg-tab-${tab.id}`}
+        data-cfg-panel={tab.id}
+        hidden={index !== 0}
+      >
+        <div class="cfg-code overflow-x-auto text-[12.5px] leading-[1.75]">
+          <Code code={tab.code} lang="ts" theme="vesper" />
+        </div>
+        <div class="flex items-center gap-2 border-t border-line px-4 py-3">
+          <span class="h-1.5 w-1.5 rounded-sm rotate-45 bg-ember-500" aria-hidden="true"
+          ></span>
+          <p class="text-[13px] text-fog-500">{tab.note}</p>
+        </div>
+      </div>
+    ))
+  }
+</div>
+
+<script>
+  import { initRovingGroups } from "../scripts/roving";
+
+  const tabs = document.querySelectorAll<HTMLButtonElement>("[data-cfg-tab]");
+  const panels = document.querySelectorAll<HTMLElement>("[data-cfg-panel]");
+
+  tabs.forEach((tab) => {
+    tab.addEventListener("click", () => {
+      const target = tab.dataset.cfgTab;
+      tabs.forEach((other) => {
+        other.setAttribute("aria-selected", String(other === tab));
+      });
+      panels.forEach((panel) => {
+        panel.hidden = panel.dataset.cfgPanel !== target;
+      });
+    });
+  });
+
+  initRovingGroups();
+</script>
+
+<style>
+  .cfg-code :global(pre) {
+    margin: 0;
+    padding: 1.15rem 1.25rem;
+    background: #0d0d10 !important;
+  }
+
+  .cfg-code :global(code) {
+    font-family: var(--font-mono);
+  }
+</style>

@@ -1,0 +1,99 @@
+---
+title: cloudflare.config.ts
+description: 用类型化的 cloudflare.config.ts 描述 Worker、容器应用与账号设置。
+group: 配置
+order: 20
+tag: 重点
+featured: true
+---
+
+import Callout from "../../components/Callout.tsx";
+
+`cloudflare.config.ts` 是 Workers 项目使用的类型化配置文件，默认导出可以定义 Worker、容器应用以及账号设置。因为它是 TypeScript 模块，所以可以使用 import、函数、环境变量与异步值。
+
+<Callout variant="warn" title="公开测试">
+  以 `cloudflare.config.ts` 进行编程式配置目前处于公开测试阶段，配置格式在稳定版发布前可能变化。加载该文件需要 Node.js 22.18 或更高版本，并且不支持 Bun。
+</Callout>
+
+在项目的 `package.json` 中设置 `"type": "module"`。否则 Node.js 每次加载该文件都会打印警告；若设为 `"type": "commonjs"`，加载会直接失败。
+
+## 最小配置
+
+从 `cf/config` 导入配置 helper，并把 `cf` 装为开发依赖，这样项目才能解析该导入。用 `cf init` 创建的项目已经自带它。
+
+```sh
+npm i -D cf
+```
+
+一个 Worker 需要 `name` 与 `compatibilityDate`；会运行代码的 Worker 还需要 `entrypoint`。
+
+```ts
+import { defineConfig } from "cf/config";
+import * as entrypoint from "./src/index.ts" with { type: "cf-worker" };
+
+export default defineConfig({
+  worker: {
+    name: "example-worker",
+    entrypoint,
+    compatibilityDate: "2026-09-27",
+  },
+});
+```
+
+`cf-worker` 导入属性让 TypeScript 推断出 Worker 模块、绑定类型与导出的类。
+
+## 默认导出的字段
+
+| 字段 | 是否必填 | 作用 |
+| --- | --- | --- |
+| `accountId` | 否 | 为 `cf` 命令设置默认账号 |
+| `complianceRegion` | 否 | 选择 `public` 或 `fedramp-high` |
+| `worker` | 开发与构建时需要 | 定义 Worker |
+| `containers` | 否 | 定义容器应用 |
+
+`defineConfig()` 会原样返回传入的值，并保留字面量类型，便于 TypeScript 推断。
+
+## 函数式配置与模式
+
+`defineConfig()`、`defineWorker()` 与 `defineContainer()` 都接受对象、Promise，或返回二者之一的函数。函数会收到上下文：
+
+| 属性 | 作用 |
+| --- | --- |
+| `mode` | 当前选中的模式，由 `--mode` 命令行参数设置 |
+| `isPreview` | 是否在 preview 环境中求值 |
+
+在 Vite 中，`vite dev` 默认使用 `development`，`vite build` 默认使用 `production`；通过 Wrangler 构建时模式为 `undefined`。
+
+```ts
+import { bindings, defineConfig } from "cf/config";
+
+export default defineConfig(({ mode }) => {
+  const isStaging = mode === "staging";
+
+  return {
+    worker: {
+      name: isStaging ? "example-staging" : "example-worker",
+      compatibilityDate: "2026-09-27",
+      env: {
+        API_URL: bindings.text(
+          isStaging ? "https://staging.example.com" : "https://example.com",
+        ),
+      },
+    },
+  };
+});
+```
+
+这样每个环境都由同一份基础按程序生成，而不是复制 `env` 块。带多个环境的简单 Worker，只需要切换 Vite 原生的模式参数即可在不同配置集之间切换。
+
+## 设置账号默认值
+
+`accountId` 为项目中的 `cf` 命令设置默认账号，也可以通过 `CLOUDFLARE_ACCOUNT_ID` 环境变量提供。函数式配置配合模式切换，可以按环境返回不同的默认账号。
+
+## 静态资源
+
+`cloudflare.config.ts` 没有 `assets.directory` 字段。在 Vite 项目中，静态资源就是 Vite 客户端构建的产物，其中包含 `publicDir`（默认 `public`）。使用 Wrangler 构建的项目则把目录写在生成的 `wrangler.config.ts` 中。
+
+## 与配置浏览器配合
+
+`cf` 提供了配置浏览器，用来查看生成出的字段、builder 方法与嵌套选项。当你不确定某个字段的类型或取值时，它比翻源码更快。

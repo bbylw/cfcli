@@ -1,0 +1,182 @@
+---
+title: 安装与登录
+description: 全局安装 cf，登录你的 Cloudflare 账号，并运行第一条命令。
+group: 开始
+order: 1
+tag: 基础
+---
+
+import Callout from "../../components/Callout.tsx";
+
+每个 `cf` 工作流都从三件事开始：安装 CLI、登录、运行一条命令。
+
+## 环境要求
+
+- 一个 Cloudflare 账号。
+- Node.js 22.18 或更高版本。
+
+<Callout variant="warn" title="运行时">
+  Bun 目前不受支持。当 `cf` 运行在 Bun 上时，任何需要加载 `cloudflare.config.ts` 的命令都会失败。
+</Callout>
+
+## 全局安装
+
+把 `cf` 装到全局，这样在任何目录下都能直接调用：
+
+```sh
+npm install --global cf
+```
+
+其他包管理器：
+
+```sh
+yarn global add cf
+pnpm add --global cf
+bun add --global cf
+```
+
+这个包会同时安装两个命令，`cf` 与 `cloudflare`，它们运行同一个 CLI。如果你的 `PATH` 中已经存在另一个叫 `cf` 的工具，就使用 `cloudflare`。
+
+确认安装成功：
+
+```sh
+cf --version
+```
+
+项目也可以把 `cf` 装为开发依赖。此时在该项目内，全局的 `cf` 命令会转去运行项目里安装的版本，于是协作伙伴、编码智能体与 CI 用的都是同一个发行版。用 `cf init` 创建的项目已经自带它。
+
+```sh
+npm i -D cf
+```
+
+## 登录
+
+启动登录流程：
+
+```sh
+cf auth login
+```
+
+`cf` 会打印一个链接和一个一次性验证码，并在浏览器中打开该链接。批准请求，即完成对 Cloudflare 账号的授权。
+
+确认当前身份：
+
+```sh
+cf auth whoami
+```
+
+在远程机器、SSH 会话或容器中，加上 `--no-browser`。`cf` 只打印链接而不打开浏览器，你可以在另一台设备的浏览器里完成批准。需要重新登录时，加上 `--force`。
+
+<Callout variant="note">
+  `cf` 维护自己的凭据，不会复用 Wrangler 的登录状态。即使你已经在用 Wrangler，也需要为 `cf` 登录一次。
+</Callout>
+
+## 运行第一条命令
+
+列出你可以访问的所有 zone：
+
+```sh
+cf zones list
+```
+
+结果以 JSON 形式写入标准输出。进度与状态信息写入标准错误，因此无需额外参数即可重定向或管道处理结果：
+
+```sh
+cf zones list > zones.json
+```
+
+## 查找命令
+
+要找到完成某项任务的命令，直接用自然语言描述给 `cf cli search`：
+
+```sh
+cf cli search "create a DNS record"
+```
+
+`cf cli search` 以 JSON 返回最多五条最匹配的命令。它在本地运行，不需要凭据。若想自己浏览，可以给 `cf`、给某个产品（如 `cf dns`）或给任意命令加上 `--help`。
+
+## 凭据顺序
+
+`cf` 使用它找到的第一个凭据：
+
+1. `CLOUDFLARE_API_TOKEN` 环境变量，包括从 `.env` 文件加载的值。
+2. 通过 `--profile <NAME>` 指定的 profile。
+3. 通过 `cf auth activate` 绑定到当前目录或其最近父目录的 profile。
+4. 默认 profile，即 `cf auth login` 登录的那个。
+
+`cf` 不支持 Global API Key。
+
+## 选择账号
+
+当命令需要账号时，`cf` 按以下顺序选择：
+
+1. `CLOUDFLARE_ACCOUNT_ID` 环境变量。
+2. `cloudflare.config.ts` 默认导出中的 `accountId` 字段。
+3. `cf` 在该项目此前的命令中保存的账号。
+4. 你的凭据唯一可访问的账号。如果有多个，`cf` 会要求你选择一个。
+
+在非交互式会话（例如脚本或 CI 任务）中，如果凭据可访问多个账号且没有已设置或保存的账号，命令将失败。
+
+## 选择 zone
+
+作用于 zone 的命令接受 `--zone` 或 `-z`，值可以是 zone ID 或域名：
+
+```sh
+cf dns records list --zone example.com
+```
+
+传入域名时，`cf` 会在已选账号中查找匹配的 zone。`--zone` 选项优先于 `CLOUDFLARE_ZONE_ID` 环境变量。
+
+## 使用具名 profile
+
+Profile 用于隔离不同凭据，例如工作与个人账号。创建一个 profile：
+
+```sh
+cf auth create work
+```
+
+`cf auth create` 会创建 profile 并为其启动登录。要在某个项目中使用它，把 profile 绑定到项目目录：
+
+```sh
+cf auth activate work
+```
+
+`cf auth activate` 会把 profile 绑定到当前目录及其子目录。要查看全部 profile，运行 `cf auth list`。
+
+## 为自动化场景认证
+
+在 CI 等非交互式环境中，设置 API token 代替 `cf auth login`：
+
+```sh
+export CLOUDFLARE_API_TOKEN=<API_TOKEN>
+export CLOUDFLARE_ACCOUNT_ID=<ACCOUNT_ID>
+```
+
+只授予该任务所需的权限。
+
+<Callout variant="warn" title="不要提交 token">
+  不要把 API token 提交到版本控制中。确认 `.gitignore` 已排除 `.env`。用 `cf init` 创建的项目默认忽略 `.env*` 文件。
+</Callout>
+
+## 从 .env 文件加载凭据
+
+API 命令会从当前目录的 `.env` 文件读取以下变量：
+
+- `CLOUDFLARE_API_TOKEN`
+- `CLOUDFLARE_ACCOUNT_ID`
+- `CLOUDFLARE_ZONE_ID`
+- `CLOUDFLARE_COMPLIANCE_REGION`
+- `CLOUDFLARE_ACCESS_CLIENT_ID`
+- `CLOUDFLARE_ACCESS_CLIENT_SECRET`
+
+`cf` 只读取 `.env`，不会读取 `.env.local` 或 `.env.<MODE>` 这类按模式区分的文件。环境中已存在的变量会覆盖文件中的值。
+
+## 配置 shell 补全
+
+把补全脚本追加到 shell 配置，然后重启 shell：
+
+```sh
+cf complete zsh >> ~/.zshrc
+```
+
+`cf complete` 同样支持 `bash`、`fish` 与 `powershell`。

@@ -1,0 +1,144 @@
+---
+import { GithubLogoIcon, ArrowUpRightIcon, ListIcon, XIcon } from "@phosphor-icons/react";
+
+const path = Astro.url.pathname;
+
+const links = [
+  { href: "/", label: "概览" },
+  { href: "/docs", label: "文档" },
+  { href: "/docs/commands", label: "命令参考" },
+  { href: "/blog", label: "博客" },
+];
+
+const isActive = (href: string) =>
+  href === "/" ? path === "/" : path === href || path.startsWith(`${href}/`);
+---
+
+<header
+  class="sticky top-0 z-50 border-b border-line/80 bg-ink-950/80 backdrop-blur-xl"
+>
+  <div class="shell flex h-16 items-center justify-between gap-6">
+    <a href="/" class="group flex items-center gap-2.5" aria-label="cf 首页">
+      <span
+        class="grid h-8 w-8 place-items-center rounded-[10px] border border-ember-500/40 bg-ember-500/12 font-mono text-[13px] font-bold text-ember-500"
+        aria-hidden="true">cf</span
+      >
+      <span class="font-mono text-sm font-medium tracking-tight text-fog-100"
+        >cf<span class="text-fog-600">.cli</span></span
+      >
+    </a>
+
+    <nav
+      class="hidden items-center gap-1 font-mono text-[13px] md:flex"
+      aria-label="主导航"
+    >
+      {
+        links.map((link) => (
+          <a
+            href={link.href}
+            aria-current={isActive(link.href) ? "page" : undefined}
+            class:list={[
+              "rounded-full px-3.5 py-2 tracking-tight transition-colors duration-200",
+              isActive(link.href)
+                ? "bg-ink-800 text-fog-100"
+                : "text-fog-500 hover:text-fog-100",
+            ]}
+          >
+            {link.label}
+          </a>
+        ))
+      }
+    </nav>
+
+    <div class="hidden items-center gap-3 md:flex">
+      <a
+        href="https://github.com/cloudflare/cf"
+        class="text-fog-500 transition-colors duration-200 hover:text-fog-100"
+        aria-label="在 GitHub 上查看 cf"
+      >
+        <GithubLogoIcon size={20} weight="bold" />
+      </a>
+      <a href="/docs/install" class="btn btn-primary">
+        安装 cf
+        <ArrowUpRightIcon size={15} weight="bold" />
+      </a>
+    </div>
+
+    <button
+      type="button"
+      id="nav-toggle"
+      class="grid h-10 w-10 place-items-center rounded-full border border-ink-600 text-fog-300 md:hidden"
+      aria-expanded="false"
+      aria-controls="nav-mobile"
+      aria-label="打开导航菜单"
+    >
+      <ListIcon id="nav-icon-open" size={20} weight="bold" className="block" />
+      <XIcon id="nav-icon-close" size={20} weight="bold" className="hidden" />
+    </button>
+  </div>
+
+  <div
+    id="nav-mobile"
+    class="hidden border-t border-line bg-ink-950/95 px-5 py-4 md:hidden"
+  >
+    <nav class="grid gap-1" aria-label="移动端导航">
+      {
+        links.map((link) => (
+          <a
+            href={link.href}
+            aria-current={isActive(link.href) ? "page" : undefined}
+            class:list={[
+              "rounded-xl px-4 py-3 text-sm transition-colors",
+              isActive(link.href)
+                ? "bg-ink-800 text-fog-100"
+                : "text-fog-500 hover:text-fog-100",
+            ]}
+          >
+            {link.label}
+          </a>
+        ))
+      }
+      <a
+        href="https://github.com/cloudflare/cf"
+        class="rounded-xl px-4 py-3 text-sm text-fog-500 transition-colors hover:text-fog-100"
+        >GitHub</a
+      >
+      <a href="/docs/install" class="btn btn-primary mt-2 justify-center">安装 cf</a>
+    </nav>
+  </div>
+</header>
+
+<script>
+  const toggle = document.getElementById("nav-toggle");
+  const panel = document.getElementById("nav-mobile");
+
+  if (toggle instanceof HTMLButtonElement && panel) {
+    const iconOpen = document.getElementById("nav-icon-open");
+    const iconClose = document.getElementById("nav-icon-close");
+
+    const setOpen = (open: boolean) => {
+      toggle.setAttribute("aria-expanded", String(open));
+      toggle.setAttribute("aria-label", open ? "关闭导航菜单" : "打开导航菜单");
+      panel.classList.toggle("hidden", !open);
+      iconOpen?.classList.toggle("hidden", open);
+      iconClose?.classList.toggle("hidden", !open);
+    };
+
+    const isOpen = () => toggle.getAttribute("aria-expanded") === "true";
+
+    toggle.addEventListener("click", () => setOpen(!isOpen()));
+
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape" && isOpen()) {
+        setOpen(false);
+        toggle.focus();
+      }
+    });
+
+    // 视口跨过 md 断点时布局接管显示，同步一次状态避免 desync
+    const desktop = window.matchMedia("(min-width: 768px)");
+    desktop.addEventListener("change", () => {
+      if (desktop.matches) setOpen(false);
+    });
+  }
+</script>

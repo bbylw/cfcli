@@ -1,0 +1,103 @@
+---
+title: 命令参考
+description: cf 的认证、项目、资源与检查类命令，以及 Wrangler 命令的对应关系。
+group: 迁移与参考
+order: 31
+tag: 参考
+---
+
+import Callout from "../../components/Callout.tsx";
+
+本页汇总最常用的命令。`cf` 覆盖 Cloudflare API 的 3,000+ 操作，完整列表可用 `cf --help` 逐级浏览，或用 `cf cli search` 直接查找。
+
+## 认证
+
+| 命令 | 作用 |
+| --- | --- |
+| `cf auth login` | 启动登录流程，打印链接与一次性验证码 |
+| `cf auth whoami` | 显示当前身份 |
+| `cf auth logout` | 退出登录 |
+| `cf auth create <NAME>` | 创建具名 profile 并为其登录 |
+| `cf auth activate <NAME>` | 把 profile 绑定到当前目录及其子目录 |
+| `cf auth deactivate` | 解除目录绑定 |
+| `cf auth list` | 列出所有 profile |
+
+在远程机器、SSH 或容器中加 `--no-browser`，需要重新登录时加 `--force`。
+
+## 项目
+
+| 命令 | 作用 |
+| --- | --- |
+| `cf init [dir]` | 创建 Workers 项目，或为已有项目接入配置 |
+| `cf dev` | 启动开发服务器 |
+| `cf build` | 构建项目并校验 Build Output |
+| `cf deploy` | 构建、上传并部署 |
+| `cf deploy --dry-run` | 构建并校验，但不上传 |
+| `cf previews deploy` | 部署预览 |
+| `cf migrate` | 把 Wrangler 配置转换为 `cloudflare.config.ts` |
+
+`cf init` 的常用参数：`--package-manager`（`npm`、`pnpm`、`yarn`、`bun`）、`--no-install`。
+
+## 资源
+
+资源类命令由 API 模式生成，形态统一：
+
+```sh
+cf zones list
+cf zones get --zone example.com
+
+cf dns records list --zone example.com
+cf dns records create --zone example.com --type A --name www --content 203.0.113.10
+cf dns records delete --zone example.com <RECORD_ID>
+
+cf d1 create --name my-database
+cf r2 buckets list
+cf workers list
+```
+
+作用域参数：
+
+- `--zone` / `-z` 接受 zone ID 或域名。
+- 账号作用域的命令使用 `CLOUDFLARE_ACCOUNT_ID`，或在配置中设置的账号。
+
+## 发现与检查
+
+| 命令 | 作用 |
+| --- | --- |
+| `cf cli search "<任务>"` | 用自然语言查找命令，本地运行，返回最多五条结果 |
+| `cf schema <command>` | 显示命令发送的 API 请求结构 |
+| `cf <command> --help` | 显示命令自身的用法 |
+| `--dry-run` | 打印请求而不发送，不需要凭据 |
+
+驱动智能体的典型顺序是：`cf cli search` → `cf schema` → `--dry-run` → 正式运行。
+
+## 其他
+
+| 命令 | 作用 |
+| --- | --- |
+| `cf complete zsh` | 输出 shell 补全脚本，支持 `bash`、`fish`、`powershell` |
+| `cf --version` | 显示版本 |
+
+<Callout variant="tip" title="另一个命令名">
+  安装包同时提供 `cf` 与 `cloudflare` 两个命令，运行的是同一个 CLI。当 `PATH` 中已有同名的 `cf` 时使用后者。
+</Callout>
+
+## 与 Wrangler 的对应关系
+
+多数 Wrangler 命令都有对应的 `cf` 命令：
+
+| Wrangler | cf |
+| --- | --- |
+| `wrangler dev` | `cf dev` |
+| `wrangler deploy` | `cf deploy` |
+| `wrangler versions` | `cf workers versions` |
+| `wrangler triggers` | `cf workers triggers` |
+| `wrangler d1` | `cf d1` |
+| `wrangler kv` | `cf kv` |
+| `wrangler r2` | `cf r2` |
+
+配置方面，`wrangler.toml` / `wrangler.jsonc` 中的 `vars` 对应 `bindings.text()`，`kv_namespaces` 对应 `bindings.kv()`，`d1_databases` 对应 `bindings.d1()`，`r2_buckets` 对应 `bindings.r2()`，`routes`、`triggers.crons` 与 `queues.consumers` 对应 `triggers.*`。
+
+<Callout variant="note">
+  命令名称与参数以 `cf --help` 的实际输出为准。`cf` 处于公开测试阶段，命令、配置与 Build Output 在稳定版发布前仍可能调整。
+</Callout>

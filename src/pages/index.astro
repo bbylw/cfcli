@@ -1,0 +1,375 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import TerminalDemo from "../components/TerminalDemo.tsx";
+import ConfigShowcase from "../components/ConfigShowcase.astro";
+import InstallPicker from "../components/InstallPicker.astro";
+import {
+  MagnifyingGlassIcon,
+  BracketsCurlyIcon,
+  LightningIcon,
+  StackIcon,
+  ArrowRightIcon,
+  CheckCircleIcon,
+} from "@phosphor-icons/react";
+
+const stats = [
+  { value: "3,000+", label: "可操作的 Cloudflare API" },
+  { value: "280", label: "Wrangler 原有的命令数" },
+  { value: "48%", label: "上周由智能体执行的 Wrangler 命令占比" },
+  { value: "18 个月", label: "稳定版发布后 Wrangler 的维护支持期" },
+];
+
+const naming = [
+  { product: "D1", command: "d1 info" },
+  { product: "Hyperdrive", command: "hyperdrive get" },
+  { product: "Workflows", command: "workflows describe" },
+];
+
+const cells = [
+  {
+    span: "md:col-span-2",
+    icon: MagnifyingGlassIcon,
+    title: "智能体自己找到命令",
+    body: "用自然语言描述目标，cf cli search 会依据 API 描述与参数返回可用命令，不必先记住命令名。",
+    visual: "search" as const,
+  },
+  {
+    span: "",
+    icon: BracketsCurlyIcon,
+    title: "JSON 才是默认输出",
+    body: "对人类美化排版，对智能体压缩成单行，省下的是上下文。",
+    visual: "json" as const,
+  },
+  {
+    span: "",
+    icon: StackIcon,
+    title: "覆盖整个 API",
+    body: "从 Workers 到 DNS、WAF、Access 与域名注册，一个工具触达全部产品。",
+    visual: "none" as const,
+  },
+  {
+    span: "md:col-span-2",
+    icon: LightningIcon,
+    title: "Vite 成为默认构建",
+    body: "具备 HMR 的开发服务器、基于 Rolldown 的构建，以及可直接复用的 Vite 插件生态。",
+    visual: "vite" as const,
+  },
+];
+
+const migration = [
+  "已经使用 Vite 构建的 Worker 会自动转换为 cloudflare.config.ts。",
+  "依赖 esbuild 的 JavaScript Worker，以及 Rust、Python Worker，开发和部署仍委托给 Wrangler。",
+  "公开测试版结束后，Wrangler 仍将获得 18 个月的维护支持，留出充足的迁移时间。",
+];
+---
+
+<BaseLayout>
+  <!-- Hero -->
+  <section class="relative overflow-hidden">
+    <div class="atmos-grid pointer-events-none absolute inset-0" aria-hidden="true"></div>
+    <div
+      class="atmos-glow drift-slow left-[-12%] top-[-16%] h-[420px] w-[420px] bg-ember-500/12"
+      aria-hidden="true"></div>
+
+    <div class="shell relative grid items-center gap-14 pb-20 pt-16 lg:grid-cols-[1.05fr_1fr] lg:gap-16 lg:pb-28 lg:pt-24">
+      <div>
+        <h1
+          class="max-w-[14ch] text-[2.6rem] font-semibold leading-[1.08] tracking-tight text-fog-100 sm:text-[3.2rem] lg:text-[3.6rem]"
+        >
+          整个 Cloudflare API，一个 cf
+        </h1>
+        <p class="mt-6 max-w-[46ch] text-base leading-relaxed text-fog-500 md:text-[1.05rem]">
+          内置智能体命令搜索、默认 JSON 输出、TypeScript 配置与 Vite 构建，一次覆盖 3,000+ 操作。
+        </p>
+
+        <div class="mt-9 flex flex-wrap items-center gap-3">
+          <a href="/docs/install" class="btn btn-primary">
+            <LightningIcon size={16} weight="bold" />
+            安装 cf
+          </a>
+          <a href="/docs" class="btn btn-ghost">
+            阅读文档
+            <ArrowRightIcon size={16} weight="bold" />
+          </a>
+        </div>
+      </div>
+
+      <div class="min-w-0 lg:pl-2">
+        <TerminalDemo client:load />
+      </div>
+    </div>
+  </section>
+
+  <!-- 数据带 -->
+  <section class="rule" data-reveal>
+    <div class="shell grid gap-px py-0 sm:grid-cols-2 lg:grid-cols-4">
+      {
+        stats.map((stat, index) => (
+          <div
+            class="relative py-8 pr-6 sm:py-10"
+            data-reveal
+            style={`--reveal-step:${index}`}
+          >
+            <div
+              class="font-mono text-[1.9rem] font-medium tracking-tight text-fog-100 md:text-[2.2rem]"
+            >
+              {stat.value}
+            </div>
+            <p class="mt-2 max-w-[24ch] text-[13px] leading-relaxed text-fog-600">
+              {stat.label}
+            </p>
+          </div>
+        ))
+      }
+    </div>
+  </section>
+
+  <!-- 为什么是 cf -->
+  <section class="shell py-24 md:py-32" data-reveal>
+    <div class="grid gap-14 lg:grid-cols-[1fr_1fr] lg:gap-20">
+      <div>
+        <h2
+          class="max-w-[16ch] text-[1.9rem] font-semibold leading-[1.15] tracking-tight text-fog-100 md:text-[2.4rem]"
+        >
+          扩展，而不是把 280 条命令推到 3,000 条
+        </h2>
+        <div class="mt-6 grid max-w-[58ch] gap-4 text-[15px] leading-relaxed text-fog-500">
+          <p>
+            Wrangler 由各产品团队手工构建，即使只有约 280 条命令路径，术语与模式也难以统一。同一件事在不同产品里有三种写法。
+          </p>
+          <p>
+            cf 换了一条路：命令直接从支撑 API 文档与 SDK 的 OpenAPI 模式生成。产品只需为模式补充少量注解，新增能力即可自动出现在 CLI 中。
+          </p>
+        </div>
+      </div>
+
+      <div class="panel min-w-0 p-6 md:p-8">
+        <p class="font-mono text-[11px] uppercase tracking-[0.16em] text-fog-600">
+          同一件事，三种命名
+        </p>
+        <ul class="mt-5 grid gap-3">
+          {
+            naming.map((item) => (
+              <li class="flex items-center justify-between gap-4 border-b border-line pb-3 last:border-0 last:pb-0">
+                <span class="text-[13px] text-fog-600">{item.product}</span>
+                <code class="font-mono text-[13px] text-fog-300">{item.command}</code>
+              </li>
+            ))
+          }
+        </ul>
+
+        <div class="mt-8 flex items-start gap-3 rounded-xl border border-ember-500/25 bg-ember-500/8 p-4">
+          <CheckCircleIcon size={18} weight="bold" className="mt-0.5 shrink-0 text-ember-500" />
+          <p class="text-[13.5px] leading-relaxed text-fog-300">
+            在 cf 中，命名与参数由同一份模式决定，命令之间不再各说各话。
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 能力 bento -->
+  <section class="rule">
+    <div class="shell py-24 md:py-32">
+      <div class="max-w-[62ch]" data-reveal>
+        <p class="font-mono text-[11px] uppercase tracking-[0.16em] text-ember-500">
+          能力
+        </p>
+        <h2
+          class="mt-4 text-[1.9rem] font-semibold leading-[1.15] tracking-tight text-fog-100 md:text-[2.4rem]"
+        >
+          为智能体构建，人类同样顺手
+        </h2>
+        <p class="mt-5 text-[15px] leading-relaxed text-fog-500">
+          每一个设计取舍都指向同一件事：让智能体少花上下文，让你少花时间。
+        </p>
+      </div>
+
+      <div class="mt-14 grid gap-4 md:grid-cols-3">
+        {
+          cells.map((cell, index) => (
+            <article
+              class:list={[
+                "panel relative min-w-0 overflow-hidden p-6 md:p-7",
+                cell.span,
+              ]}
+              data-reveal
+              style={`--reveal-step:${index}`}
+            >
+              <div class="flex items-center gap-2.5">
+                <cell.icon size={18} weight="bold" className="text-ember-500" />
+                <h3 class="text-[15px] font-semibold tracking-tight text-fog-100">
+                  {cell.title}
+                </h3>
+              </div>
+              <p class="mt-3 max-w-[46ch] text-[13.5px] leading-relaxed text-fog-500">
+                {cell.body}
+              </p>
+
+              {cell.visual === "search" && (
+                <div class="mt-6 grid gap-2">
+                  <div class="flex items-center gap-2 rounded-full border border-line bg-ink-850 px-3.5 py-2">
+                    <MagnifyingGlassIcon size={14} weight="bold" className="text-fog-600" />
+                    <span class="font-mono text-[12px] text-fog-300">
+                      cf cli search "create D1 database"
+                    </span>
+                  </div>
+                  <div class="grid gap-2 pl-1">
+                    <div class="flex items-baseline gap-2">
+                      <code class="font-mono text-[12px] text-ember-400">cf d1 create</code>
+                      <span class="text-[12px] text-fog-600">找到命令</span>
+                    </div>
+                    <div class="flex items-baseline gap-2">
+                      <code class="font-mono text-[12px] text-fog-300">cf schema d1 create</code>
+                      <span class="text-[12px] text-fog-600">查看参数</span>
+                    </div>
+                    <div class="flex items-baseline gap-2">
+                      <code class="font-mono text-[12px] text-fog-300">cf d1 create --dry-run</code>
+                      <span class="text-[12px] text-fog-600">预演请求</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {cell.visual === "json" && (
+                <div class="mt-6 overflow-hidden rounded-xl border border-line bg-ink-950/70 p-3">
+                  <pre class="overflow-x-auto font-mono text-[11.5px] leading-relaxed text-fog-500">
+<span class="text-fog-300">"name"</span>: <span class="text-ember-400">"my-worker"</span>,
+<span class="text-fog-300">"routes"</span>: <span class="text-fog-100">3</span></pre>
+                </div>
+              )}
+
+              {cell.visual === "vite" && (
+                <div class="mt-6 flex flex-wrap gap-2">
+                  {["HMR", "Rolldown", "Vitest", "Vite 插件"].map((tag) => (
+                    <span class="rounded-full border border-line bg-ink-850 px-3 py-1 font-mono text-[11.5px] text-fog-500">
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </article>
+          ))
+        }
+      </div>
+    </div>
+  </section>
+
+  <!-- 配置即代码 -->
+  <section class="rule">
+    <div class="shell py-24 md:py-32">
+      <div class="grid gap-12 lg:grid-cols-[0.85fr_1.15fr] lg:gap-16">
+        <div data-reveal>
+          <p class="font-mono text-[11px] uppercase tracking-[0.16em] text-ember-500">
+            配置
+          </p>
+          <h2
+            class="mt-4 text-[1.9rem] font-semibold leading-[1.15] tracking-tight text-fog-100 md:text-[2.4rem]"
+          >
+            配置也能被类型检查
+          </h2>
+          <div class="mt-6 grid max-w-[52ch] gap-4 text-[15px] leading-relaxed text-fog-500">
+            <p>
+              cloudflare.config.ts 让人类与编辑器都读得懂配置。使用 LSP 的智能体可以直接在上下文中解读它，给出更准确的建议。
+            </p>
+            <p>
+              TOML 没有可访问的模式，JSONC 虽有模式却很少被智能体使用；TypeScript 两者兼得。
+            </p>
+          </div>
+          <a
+            href="/docs/config"
+            class="mt-8 inline-flex items-center gap-2 text-sm font-medium text-ember-400 transition-colors hover:text-ember-500"
+          >
+            查看配置指南
+            <ArrowRightIcon size={15} weight="bold" />
+          </a>
+        </div>
+
+        <div class="min-w-0" data-reveal style="--reveal-step:1">
+          <ConfigShowcase />
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 迁移 -->
+  <section class="rule">
+    <div class="shell py-24 md:py-32">
+      <div class="grid gap-12 lg:grid-cols-[1fr_1fr] lg:items-center lg:gap-20">
+        <div data-reveal>
+          <h2
+            class="max-w-[18ch] text-[1.9rem] font-semibold leading-[1.15] tracking-tight text-fog-100 md:text-[2.4rem]"
+          >
+            从 Wrangler 迁移，只要一条命令
+          </h2>
+          <ul class="mt-8 grid max-w-[56ch] gap-5">
+            {
+              migration.map((item) => (
+                <li class="flex gap-3 text-[14.5px] leading-relaxed text-fog-500">
+                  <CheckCircleIcon
+                    size={18}
+                    weight="bold"
+                    className="mt-0.5 shrink-0 text-ember-500"
+                  />
+                  <span>{item}</span>
+                </li>
+              ))
+            }
+          </ul>
+        </div>
+
+        <div class="panel min-w-0 overflow-hidden" data-reveal style="--reveal-step:1">
+          <div class="border-b border-line bg-ink-850/60 px-4 py-2.5">
+            <span class="font-mono text-[11px] uppercase tracking-[0.14em] text-fog-600">
+              迁移
+            </span>
+          </div>
+          <div class="px-5 py-5 font-mono text-[12.5px] leading-[1.9]">
+            <div class="flex gap-2">
+              <span class="select-none text-ember-500">$</span>
+              <span class="text-fog-100">cf migrate</span>
+            </div>
+            <div class="mt-3 grid gap-1">
+              <span class="text-fog-500">将更新 4 个文件：</span>
+              <span class="text-ember-400">├─ cloudflare.config.ts</span>
+              <span class="text-ember-400">├─ wrangler.config.ts</span>
+              <span class="text-fog-500">└─ package.json</span>
+            </div>
+            <div class="mt-4 border-t border-line pt-4 text-fog-500">
+              已使用 Vite 的 Worker 会自动完成转换。
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 安装 -->
+  <section class="rule">
+    <div class="shell py-24 md:py-32">
+      <div class="grid gap-12 lg:grid-cols-[1fr_1fr] lg:items-center lg:gap-20">
+        <div data-reveal>
+          <h2
+            class="max-w-[16ch] text-[2rem] font-semibold leading-[1.12] tracking-tight text-fog-100 md:text-[2.6rem]"
+          >
+            全局安装，随时运行
+          </h2>
+          <p class="mt-5 max-w-[48ch] text-[15px] leading-relaxed text-fog-500">
+            cf 目前处于公开测试阶段，命令、配置与构建输出在稳定版发布前仍可能变化。
+          </p>
+          <div class="mt-8 flex flex-wrap gap-3">
+            <a href="/docs/install" class="btn btn-primary">
+              安装并登录
+              <ArrowRightIcon size={16} weight="bold" />
+            </a>
+            <a href="/docs/quickstart" class="btn btn-ghost">部署第一个 Worker</a>
+          </div>
+        </div>
+
+        <div class="min-w-0" data-reveal style="--reveal-step:1">
+          <InstallPicker />
+        </div>
+      </div>
+    </div>
+  </section>
+</BaseLayout>

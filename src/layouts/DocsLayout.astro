@@ -1,0 +1,164 @@
+---
+import BaseLayout from "./BaseLayout.astro";
+import { ArrowLeftIcon, ArrowRightIcon } from "@phosphor-icons/react";
+
+interface NavItem {
+  slug: string;
+  title: string;
+  group: string;
+  order: number;
+}
+
+interface Props {
+  title: string;
+  description: string;
+  group: string;
+  tag?: string;
+  headings: { depth: number; slug: string; text: string }[];
+  nav: NavItem[];
+  prev?: NavItem;
+  next?: NavItem;
+}
+
+const { title, description, group, tag, headings, nav, prev, next } = Astro.props;
+const current = Astro.url.pathname;
+
+const groups = nav.reduce<Record<string, NavItem[]>>((acc, item) => {
+  acc[item.group] ??= [];
+  acc[item.group]!.push(item);
+  return acc;
+}, {});
+
+const toc = headings.filter((heading) => heading.depth === 2 || heading.depth === 3);
+---
+
+<BaseLayout title={title} description={description}>
+  <div
+    class="shell grid gap-10 py-12 lg:grid-cols-[210px_minmax(0,1fr)] lg:gap-14 lg:py-16 xl:grid-cols-[210px_minmax(0,1fr)_180px]"
+  >
+    <aside class="lg:sticky lg:top-24 lg:max-h-[calc(100dvh-8rem)] lg:self-start lg:overflow-y-auto">
+      <nav aria-label="文档导航" class="grid gap-7">
+        {
+          Object.entries(groups).map(([groupName, items]) => (
+            <div>
+              <p class="font-mono text-[11px] uppercase tracking-[0.16em] text-fog-600">
+                {groupName}
+              </p>
+              <ul class="mt-3 grid gap-0.5">
+                {items.map((item) => {
+                  const href = `/docs/${item.slug}`;
+                  const active = current === href;
+                  return (
+                    <li>
+                      <a
+                        href={href}
+                        aria-current={active ? "page" : undefined}
+                        class:list={[
+                          "block rounded-lg px-3 py-2 text-[13.5px] leading-snug transition-colors duration-200",
+                          active
+                            ? "bg-ink-800 text-fog-100"
+                            : "text-fog-500 hover:bg-ink-900 hover:text-fog-300",
+                        ]}
+                      >
+                        {item.title}
+                      </a>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          ))
+        }
+      </nav>
+    </aside>
+
+    <article class="min-w-0">
+      <header class="max-w-[68ch]">
+        <div class="flex flex-wrap items-center gap-3">
+          <span class="font-mono text-[11px] uppercase tracking-[0.16em] text-fog-600">
+            {group}
+          </span>
+          {
+            tag && (
+              <span class="rounded-full border border-ember-500/30 bg-ember-500/10 px-2.5 py-0.5 font-mono text-[11px] text-ember-400">
+                {tag}
+              </span>
+            )
+          }
+        </div>
+        <h1
+          class="mt-4 text-[2rem] font-semibold leading-[1.15] tracking-tight text-fog-100 md:text-[2.5rem]"
+        >
+          {title}
+        </h1>
+        <p class="mt-4 text-[15px] leading-relaxed text-fog-500">{description}</p>
+      </header>
+
+      <div class="rule mt-10 pt-10">
+        <div class="prose-cf">
+          <slot />
+        </div>
+      </div>
+
+      <nav class="rule mt-16 grid gap-4 pt-8 sm:grid-cols-2" aria-label="上一篇与下一篇">
+        {
+          prev ? (
+            <a
+              href={`/docs/${prev.slug}`}
+              class="panel group flex flex-col gap-1.5 p-4 transition-colors duration-200 hover:border-ink-600"
+            >
+              <span class="flex items-center gap-1.5 font-mono text-[11px] text-fog-600">
+                <ArrowLeftIcon size={12} weight="bold" />
+                上一篇
+              </span>
+              <span class="text-[14px] text-fog-300 group-hover:text-fog-100">
+                {prev.title}
+              </span>
+            </a>
+          ) : (
+            <div />
+          )
+        }
+        {
+          next && (
+            <a
+              href={`/docs/${next.slug}`}
+              class="panel group flex flex-col items-end gap-1.5 p-4 text-right transition-colors duration-200 hover:border-ink-600 sm:col-start-2"
+            >
+              <span class="flex items-center gap-1.5 font-mono text-[11px] text-fog-600">
+                下一篇
+                <ArrowRightIcon size={12} weight="bold" />
+              </span>
+              <span class="text-[14px] text-fog-300 group-hover:text-fog-100">
+                {next.title}
+              </span>
+            </a>
+          )
+        }
+      </nav>
+    </article>
+
+    {
+      toc.length > 1 && (
+        <aside class="hidden xl:block xl:sticky xl:top-24 xl:self-start">
+          <p class="font-mono text-[11px] uppercase tracking-[0.16em] text-fog-600">本页内容</p>
+          <ul class="mt-3 grid gap-2 border-l border-line">
+            {toc.map((heading) => (
+              <li>
+                <a
+                  href={`#${heading.slug}`}
+                  class:list={[
+                    "-ml-px block border-l py-0.5 text-[12.5px] leading-snug text-fog-600 transition-colors hover:border-ember-500 hover:text-fog-300",
+                    heading.depth === 3 ? "pl-7" : "pl-4",
+                  ]}
+                >
+                  {heading.text}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </aside>
+      )
+    }
+  </div>
+</BaseLayout>

@@ -1,0 +1,129 @@
+---
+import "@fontsource-variable/space-grotesk";
+import "@fontsource-variable/jetbrains-mono";
+import "../styles/global.css";
+import { ArrowRightIcon } from "@phosphor-icons/react";
+import Nav from "../components/Nav.astro";
+import Footer from "../components/Footer.astro";
+
+interface Props {
+  title?: string;
+  description?: string;
+  /** 分享卡片图片路径，相对站点根。 */
+  image?: string;
+  /** 博客详情页传 "article"，其余留空。 */
+  type?: "website" | "article";
+  publishedTime?: Date;
+  author?: string;
+  /** 404 等页面传 true，避免被索引。 */
+  noindex?: boolean;
+}
+
+const {
+  title,
+  description = "cf 是面向整个 Cloudflare API 的智能体 CLI：内置命令搜索、默认 JSON 输出、以 TypeScript 编写 cloudflare.config.ts，并以 Vite 作为默认构建工具。",
+  image = "/og.png",
+  type = "website",
+  publishedTime,
+  author,
+  noindex = false,
+} = Astro.props;
+
+const SITE_NAME = "cf 中文站";
+const fullTitle = title ? `${title} · cf` : "cf：面向整个 Cloudflare API 的智能体 CLI";
+const origin = Astro.site ?? Astro.url;
+const canonical = new URL(Astro.url.pathname, origin);
+const socialImage = new URL(image, origin);
+---
+
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <title>{fullTitle}</title>
+    <meta name="description" content={description} />
+    {noindex && <meta name="robots" content="noindex, follow" />}
+    <link rel="canonical" href={canonical} />
+    <meta name="theme-color" content="#0a0a0c" />
+    <meta name="color-scheme" content="dark" />
+
+    <meta property="og:type" content={type} />
+    <meta property="og:locale" content="zh_CN" />
+    <meta property="og:site_name" content={SITE_NAME} />
+    <meta property="og:title" content={fullTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={socialImage} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content={fullTitle} />
+    <meta property="og:image:type" content="image/png" />
+    {
+      publishedTime && (
+        <meta
+          property="article:published_time"
+          content={publishedTime.toISOString()}
+        />
+      )
+    }
+    {author && <meta property="article:author" content={author} />}
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={fullTitle} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={socialImage} />
+  </head>
+  <body class="min-h-[100dvh] antialiased">
+    <a
+      href="#main"
+      class="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[70] focus:rounded-full focus:bg-ember-500 focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-ink-950"
+      >跳到主要内容</a
+    >
+
+    <div class="atmos-noise" aria-hidden="true"></div>
+
+    <div class="border-b border-line bg-ink-900/60">
+      <div class="shell flex flex-wrap items-center justify-center gap-x-3 gap-y-1 py-2.5 text-center">
+        <p class="text-[13px] text-fog-500">
+          cf 公开测试版现已发布，完整映射整个 Cloudflare API。
+        </p>
+        <a
+          href="/blog/cf-launch"
+          class="inline-flex items-center gap-1 text-[13px] font-medium text-ember-400 transition-colors hover:text-ember-500"
+        >
+          阅读发布公告
+          <ArrowRightIcon size={13} weight="bold" />
+        </a>
+      </div>
+    </div>
+
+    <Nav />
+    <main id="main">
+      <slot />
+    </main>
+    <Footer />
+
+    <script>
+      const targets = document.querySelectorAll<HTMLElement>("[data-reveal]");
+      const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+      if (reduced || !("IntersectionObserver" in window)) {
+        targets.forEach((el) => el.classList.add("is-revealed"));
+      } else {
+        const observer = new IntersectionObserver(
+          (entries) => {
+            for (const entry of entries) {
+              if (!entry.isIntersecting) continue;
+              entry.target.classList.add("is-revealed");
+              observer.unobserve(entry.target);
+            }
+          },
+          { rootMargin: "0px 0px -10% 0px", threshold: 0.12 },
+        );
+        targets.forEach((el) => observer.observe(el));
+      }
+    </script>
+  </body>
+</html>

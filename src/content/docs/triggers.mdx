@@ -1,0 +1,60 @@
+---
+title: 触发器
+description: 用一个 triggers 数组集中声明路由、队列、定时与邮件触发器。
+group: 配置
+order: 22
+tag: 参考
+---
+
+import Callout from "../../components/Callout.tsx";
+
+所有可能触发 Worker 运行的操作，现在集中在配置里的单一 `triggers` 块中，而不是像以往那样零散地分布在配置文件的各处。
+
+## 基本形态
+
+```ts
+import { defineConfig, triggers } from "cf/config";
+
+export default defineConfig({
+  worker: {
+    name: "example-worker",
+    compatibilityDate: "2026-09-27",
+    triggers: [
+      triggers.fetch({ pattern: "example.com/*" }),
+      triggers.scheduled({ schedule: "0 * * * *" }),
+      triggers.queue({ name: "jobs", maxBatchSize: 10 }),
+      triggers.email({ addresses: ["support@example.com"] }),
+    ],
+  },
+});
+```
+
+## 可用的触发器
+
+| Builder | 触发条件 |
+| --- | --- |
+| `triggers.fetch({ pattern })` | 匹配路由模式的请求 |
+| `triggers.scheduled({ schedule })` | cron 计划，例如 `0 * * * *` |
+| `triggers.queue({ name, maxBatchSize })` | 队列消费 |
+| `triggers.email({ addresses })` | Email Routing 地址收到的邮件 |
+| `triggers.connect(...)` | 原始套接字连接 |
+
+`triggers` 是数组，因此一个 Worker 可以同时声明多种触发方式，顺序与写法都一目了然。
+
+## 为什么集中声明
+
+在 Wrangler 中，路由写在 `routes`，cron 写在 `triggers.crons`，队列消费者写在 `queues.consumers`，邮件写在别处。要弄清「什么会让这个 Worker 跑起来」，必须在整个文件里来回找。
+
+改成数组之后，这个问题变成一次阅读：
+
+```ts
+triggers: [
+  triggers.fetch({ pattern: "api.example.com/*" }),
+  triggers.queue({ name: "orders-jobs", maxBatchSize: 10 }),
+  triggers.scheduled({ schedule: "0 * * * *" }),
+],
+```
+
+<Callout variant="tip" title="迁移时的对应关系">
+  从 Wrangler 迁移时，`routes`、`triggers.crons` 与 `queues.consumers` 会被转换为对应的 `triggers.*` 调用。涉及 Durable Object 的部分需要人工复核，`cf migrate` 会把它列为必填的处理项。
+</Callout>

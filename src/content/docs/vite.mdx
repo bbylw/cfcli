@@ -1,0 +1,100 @@
+---
+title: 开发、构建与部署
+description: 用 cf dev、cf build 与 cf deploy 运行 Workers 项目，涵盖模式、预构建部署与预览。
+group: 配置
+order: 23
+tag: 指南
+---
+
+import Callout from "../../components/Callout.tsx";
+
+`cf` 用同一个 CLI 管理 Workers 项目的开发、构建与部署，以及账号中的其余资源。构建产物写入 `.cloudflare/output/v0/`。
+
+## cf 如何运行你的项目
+
+`cf` 自己并不运行开发服务器或打包器。对于 `cf dev`、`cf build` 以及任何需要先构建的命令，它会把工作交给以下之一：
+
+1. **框架自带的命令。** 当 `cf` 探测到受支持的框架时，会通过你的包管理器运行该框架的 dev 或 build 命令。在 Vite 项目中就是 `vite` 或 `vite build`。
+2. **已安装的 Cloudflare 构建工具。** 否则 `cf` 使用 `package.json` 中声明的 Cloudflare 构建工具：Cloudflare Vite 插件，或在未声明该插件时使用 Wrangler 4.136.0 以上版本。
+
+`cf` 使用 Cloudflare Vite 插件 2.0 beta，它不依赖 Wrangler。
+
+<Callout variant="warn" title="不会运行 package.json 脚本">
+  `cf` 不运行你的 `package.json` 脚本。如果你的 `build` 脚本包含额外步骤，例如 `tsc -b && vite build`，那么 `cf build` 与 `cf deploy` 会跳过它们。请改为在你自己的脚本里串联。
+</Callout>
+
+```json
+{
+  "scripts": {
+    "build": "tsc -b && cf build"
+  }
+}
+```
+
+## 开发
+
+```sh
+cf dev
+```
+
+开发服务器会打印本地地址。默认是 `http://localhost:5173/`。在通过框架命令运行的项目中，`cf` 只转发 `--mode`，其余参数会被拒绝。要改端口，设置 `vite.config.ts` 中的 `server.port`。
+
+## 构建
+
+```sh
+cf build
+```
+
+构建完成后，`cf` 会读取并校验 `.cloudflare/output/v0/`。`cf build` 不上传任何内容，也不需要凭据。
+
+## 部署
+
+```sh
+cf deploy
+```
+
+`cf deploy` 会构建项目、校验 Build Output、解析凭据与账号、上传新的 Worker Version 并部署。
+
+`cf deploy` 接受的选项：
+
+| 选项 | 作用 |
+| --- | --- |
+| `--dry-run` | 构建并校验 Worker，但不上传 |
+| `--message <TEXT>` | 在 Worker Version 上记录一条消息 |
+| `--tag <TAG>` | 在 Worker Version 上记录一个标签 |
+| `--secrets-file <PATH>` | 随版本上传 JSON 或 `.env` 格式的密钥文件 |
+| `--dispatch-namespace <NAMESPACE>` | 把 Workers for Platforms 的用户 Worker 部署到指定 dispatch 命名空间 |
+| `--containers-rollout <STRATEGY>` | 设置容器发布策略：`immediate`、`gradual` 或 `none` |
+| `--worker <NAME>` | 从 Build Output 中选择一个 Worker，而不是默认 Worker |
+| `--prebuilt` | 不重新构建，直接部署已有的 Build Output |
+
+```sh
+cf deploy --dry-run
+cf deploy --message "Fix header parsing" --tag v1.2.0
+```
+
+<Callout variant="tip">
+  `--dry-run` 不发送 API 请求也不需要凭据，因此可以在登录之前验证项目。
+</Callout>
+
+## 模式
+
+模式决定函数式 `cloudflare.config.ts` 返回哪一份配置。用 `--mode` 或 `-m` 传入：
+
+```sh
+cf dev --mode staging
+cf build -m staging
+cf deploy --mode staging
+```
+
+省略 `--mode` 时，Cloudflare Vite 插件对 `cf dev` 使用 `development`，对构建使用 `production`。通过 Wrangler 与 API 命令构建时，模式为 `undefined`。
+
+## 自动配置
+
+当项目没有 `cloudflare.config.ts` 时，`cf` 会先尝试探测框架并完成配置，再继续执行。以下命令会触发自动配置：`cf dev`、`cf build`、`cf deploy`（包括 `--dry-run`）、`cf previews deploy`、`cf workers versions create`、`cf workers triggers deploy`、`cf workers check` 与 `cf init`。
+
+在终端中，`cf` 会展示计划中的改动并在应用前询问。没有终端时（例如 CI），它会直接应用改动并安装依赖。给 `--prebuilt` 可以跳过自动配置。
+
+## 本地资源数据
+
+`--local` 只对少数资源有效，主要是 KV 键、通过 `cf d1 raw` 的 D1 数据库、`cf d1 migrations list`、`cf d1 migrations apply` 以及 R2 对象。没有本地实现的命令，包括 `cf d1 query`，会直接返回错误，而不会去调用 Cloudflare API。

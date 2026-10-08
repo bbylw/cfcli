@@ -1,0 +1,123 @@
+---
+title: 从 Wrangler 迁移
+description: 用 cf migrate 把 Wrangler 配置转换为 cloudflare.config.ts，处理后续事项并部署。
+group: 迁移与参考
+order: 30
+tag: 重点
+featured: true
+---
+
+import Callout from "../../components/Callout.tsx";
+
+`cf migrate` 把 Wrangler 配置文件转换为 `cloudflare.config.ts`，并把 `cf` 加入你的项目。它处理大部分转换，然后列出需要你手工完成的条目。
+
+## 开始之前
+
+- 安装 `cf` 并满足其[环境要求](/docs/install)。
+- **提交或暂存所有改动**，包括未跟踪文件。只要 `git status` 显示仓库中有任何改动，`cf migrate` 就不会写入文件。被 `.gitignore` 排除的文件不计入。
+- 安装项目依赖。使用 Wrangler 打包器时，Worker 所在的包需要安装 Wrangler 4.136.0 或更高版本。
+- **不要在项目里先运行 `cf dev`、`cf build` 或 `cf deploy`。** 在未迁移的项目中，它们会写入自己的配置或直接失败。
+
+## 预演迁移
+
+在包含 Wrangler 配置文件的目录中运行：
+
+```sh
+cf migrate --dry-run
+```
+
+不传路径时，`cf migrate` 会在当前目录中查找唯一的 `wrangler.json`、`wrangler.jsonc` 或 `wrangler.toml`。文件在其他位置（例如 monorepo 中的某个包）时，传入路径：
+
+```sh
+cf migrate packages/api/wrangler.jsonc --dry-run
+```
+
+`cf migrate` 会把文件写在配置文件旁边。预演会列出将要改动的文件与后续事项，但不展示文件内容：
+
+```txt
+Using the Wrangler bundler because @cloudflare/vite-plugin is not declared. Pass --bundler vite to override.
+Would update 4 file(s):
+├─ cloudflare.config.ts
+├─ wrangler.config.ts
+├─ package.json
+└─ package-lock.json
+Follow-up work:
+├─ [required] durable_objects.bindings.0: Durable Object bindings require manual review after migration.
+⚠ Migration requires follow-up work.
+```
+
+与真实运行一样，只要还有 `[required]` 条目，预演就以状态码 `1` 退出。它不检查 Git 工作区是否干净。
+
+## 选择打包器
+
+`cf migrate` 依据 Wrangler 配置文件旁的 `package.json` 来选择打包器：
+
+| 打包器 | 选择条件 | 构建工具 | 构建设置所在 |
+| --- | --- | --- | --- |
+| Vite | 声明了 `@cloudflare/vite-plugin` | Vite 与 Cloudflare Vite 插件 | `vite.config.ts` |
+| Wrangler | 未声明 `@cloudflare/vite-plugin` | 项目中安装的 Wrangler | `cf migrate` 生成的 `wrangler.config.ts` |
+
+不传 `--bundler` 时，输出的第一行会解释这次的选择。要覆盖它，传 `--bundler vite` 或 `--bundler wrangler`。
+
+<Callout variant="note">
+  `cf migrate` 不会安装 Vite，也不会创建 `vite.config.ts`。要把尚未使用 Vite 的项目切到 Vite 打包器，先传 `--bundler vite`，再自行安装 Vite 与插件。
+</Callout>
+
+## 运行迁移
+
+用与预演相同的参数运行，去掉 `--dry-run`：
+
+```sh
+cf migrate
+```
+
+| 参数 | 说明 |
+| --- | --- |
+| `[path]` | Wrangler 配置文件的路径，默认为当前目录中唯一的那一个 |
+| `--bundler` | `vite` 或 `wrangler`，省略时根据 `package.json` 选择 |
+| `--dry-run` | 列出将要改动的文件而不写入 |
+| `--force` | 即使 Git 工作区不干净也运行，但不会绕过其他检查 |
+| `--no-install` | 跳过把 `cf` 加入项目 |
+
+## 检查改动
+
+用 `git status` 与 `git diff` 复查。`cf migrate` 会改动这些文件：
+
+| 文件 | 改动 |
+| --- | --- |
+| `cloudflare.config.ts` | 在 Wrangler 配置文件旁创建 |
+| `wrangler.config.ts` | 仅在使用 Wrangler 打包器时创建，存放构建设置 |
+| `package.json` 与 lockfile | 更新，把 `cf` 加为开发依赖 |
+| Wrangler 配置文件 | 不变 |
+| 脚本、`vite.config.ts`、`.gitignore`、`tsconfig.json`、源码 | 不变 |
+
+因为 `cloudflare.config.ts` 会从 `cf/config` 导入，项目需要自己的 `cf` 依赖。
+
+`cf migrate` 从不覆盖文件。如果 `cloudflare.config.ts` 已存在，它就会停止。
+
+## 处理后续事项
+
+每个后续条目有两个级别：
+
+- `[required]`：必须在项目构建前处理。只要还有必填条目，`cf migrate` 就以状态码 `1` 退出，但这**不代表迁移失败**。
+- `[info]`：供参考的上下文，无需改动。
+
+`cf migrate` 会把每个必填条目写成 `cloudflare.config.ts` 中的 `TODO(@cloudflare)` 注释，并在文件顶部加一条 `throw` 语句。在你删除该语句之前，`cf dev`、`cf build` 与 `cf deploy` 都会失败：
+
+```txt
+Error: Migration incomplete. Resolve every cf migrate TODO in `cloudflare.config.ts`.
+```
+
+典型的必填项是 Durable Object 绑定。Wrangler 的 Durable Object migrations 不受支持，需要替换为 exports 声明：
+
+```ts
+exports: { Counter: exports.durableObject({ storage: "sqlite" }) }
+```
+
+## 使用智能体迁移
+
+可以让编码智能体按顺序执行：`cf migrate --dry-run` 预演、`cf migrate` 执行、然后逐项处理 `TODO(@cloudflare)` 注释，并就它无法独立决定的选择向你确认。
+
+## 迁移之后
+
+当公开测试版结束，Cloudflare 将发布 Wrangler 的最后一个主要版本，引导你迁移到 `cf`。测试版结束后，Wrangler 仍会获得 18 个月的维护支持，留出充足的迁移时间。

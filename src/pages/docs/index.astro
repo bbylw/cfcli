@@ -1,0 +1,102 @@
+---
+import { getCollection } from "astro:content";
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import { ArrowRightIcon, BookOpenIcon } from "@phosphor-icons/react";
+
+const docs = (await getCollection("docs")).sort((a, b) => a.data.order - b.data.order);
+
+const groups = docs.reduce<Record<string, typeof docs>>((acc, entry) => {
+  acc[entry.data.group] ??= [];
+  acc[entry.data.group]!.push(entry);
+  return acc;
+}, {});
+
+const featured = docs.filter((entry) => entry.data.featured);
+---
+
+<BaseLayout
+  title="文档"
+  description="cf 的中文文档：安装与登录、部署第一个 Worker、面向编码智能体的用法、cloudflare.config.ts 配置与从 Wrangler 迁移。"
+>
+  <div class="relative overflow-hidden border-b border-line">
+    <div class="atmos-grid pointer-events-none absolute inset-0" aria-hidden="true"></div>
+    <div
+      class="atmos-glow left-[8%] top-[-40%] h-[320px] w-[320px] bg-ember-500/10"
+      aria-hidden="true">
+    </div>
+
+    <div class="shell relative py-16 md:py-20">
+      <h1
+        class="max-w-[16ch] text-[2.2rem] font-semibold leading-[1.12] tracking-tight text-fog-100 md:text-[3rem]"
+      >
+        文档
+      </h1>
+      <p class="mt-5 max-w-[54ch] text-[15px] leading-relaxed text-fog-500">
+        从安装到迁移，覆盖 cf 的完整工作流。内容整理自 Cloudflare 官方 README、发布公告与开发者文档。
+      </p>
+
+      <div class="mt-10 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        {
+          featured.map((entry, index) => (
+            <a
+              href={`/docs/${entry.id}`}
+              class="panel group flex flex-col gap-3 p-5 transition-colors duration-200 hover:border-ink-600"
+              data-reveal
+              style={`--reveal-step:${index}`}
+            >
+              <BookOpenIcon size={18} weight="bold" className="text-ember-500" />
+              <span class="text-[15px] font-medium text-fog-100">{entry.data.title}</span>
+              <span class="text-[13px] leading-relaxed text-fog-500">
+                {entry.data.description}
+              </span>
+              <span class="mt-auto flex items-center gap-1 pt-2 text-[13px] text-ember-400">
+                开始阅读
+                <ArrowRightIcon
+                  size={13}
+                  weight="bold"
+                  className="transition-transform duration-200 group-hover:translate-x-0.5"
+                />
+              </span>
+            </a>
+          ))
+        }
+      </div>
+    </div>
+  </div>
+
+  <div class="shell grid gap-14 py-16 md:py-20 lg:grid-cols-2">
+    {
+      Object.entries(groups).map(([groupName, entries], index) => (
+        <section data-reveal style={`--reveal-step:${index}`}>
+          <h2 class="font-mono text-[11px] uppercase tracking-[0.16em] text-fog-600">
+            {groupName}
+          </h2>
+          <ul class="mt-5 grid gap-px">
+            {entries.map((entry) => (
+              <li>
+                <a
+                  href={`/docs/${entry.id}`}
+                  class="group flex items-baseline gap-4 border-b border-line py-4 transition-colors duration-200"
+                >
+                  <span class="min-w-0 flex-1">
+                    <span class="block text-[15px] text-fog-100 transition-colors group-hover:text-ember-400">
+                      {entry.data.title}
+                    </span>
+                    <span class="mt-1 block text-[13px] leading-relaxed text-fog-600">
+                      {entry.data.description}
+                    </span>
+                  </span>
+                  <ArrowRightIcon
+                    size={14}
+                    weight="bold"
+                    className="mt-1 shrink-0 text-fog-600 transition-all duration-200 group-hover:translate-x-0.5 group-hover:text-ember-400"
+                  />
+                </a>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ))
+    }
+  </div>
+</BaseLayout>

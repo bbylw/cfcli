@@ -1,0 +1,140 @@
+---
+title: 部署第一个 Worker
+description: 用 cf init 创建项目，在本地开发，再通过 cf deploy 部署到你的 Cloudflare 账号。
+group: 开始
+order: 2
+tag: 教程
+---
+
+import Callout from "../../components/Callout.tsx";
+
+本指南用 `cf init` 创建一个 Worker，在本机运行它，然后部署到你的 Cloudflare 账号。在部署之前你不需要登录。
+
+## 1. 创建项目
+
+在一个新目录中创建项目：
+
+```sh
+cf init my-worker
+```
+
+`cf init` 会询问使用哪个包管理器，在 `my-worker` 中创建项目、安装依赖，并为绑定生成类型。如果不指定目录，它会再问一次。
+
+除了 `node_modules` 和安装产生的 lockfile，`cf init` 会生成这些文件：
+
+- `src/index.ts`：Worker 本体。
+- `cloudflare.config.ts`：用 TypeScript 描述这个 Worker。
+- `vite.config.ts`：引入 Cloudflare Vite 插件，开发时在 Workers 运行时中执行你的代码，构建时产出可部署的产物。
+- `package.json`：提供 `dev`、`build`、`deploy` 脚本，分别运行对应的 `cf` 命令。它声明了 `cf` 与 Vite 插件 2.0 beta，但不声明 Wrangler。
+- `.cloudflare/types/index.d.ts`：生成的绑定与运行时类型。
+
+默认的 Worker 读取 `WORLD` 绑定并返回问候语：
+
+```ts
+import { env } from "cloudflare:workers";
+
+export default {
+  fetch() {
+    return new Response(`Hello ${env.WORLD}!`);
+  },
+} satisfies ExportedHandler;
+```
+
+对应的 `cloudflare.config.ts` 声明了名称、入口与 `WORLD` 文本绑定：
+
+```ts
+import { bindings, defineConfig } from "cf/config";
+import * as entrypoint from "./src/index.ts" with { type: "cf-worker" };
+
+export default defineConfig({
+  worker: {
+    name: "my-worker",
+    entrypoint,
+    compatibilityDate: "2026-09-27",
+    env: {
+      WORLD: bindings.text("World"),
+    },
+  },
+});
+```
+
+<Callout variant="note" title="关于 cf-worker">
+  `cf-worker` 导入属性让 TypeScript 推断出 Worker 模块、绑定类型与导出的类。`cf` 只从它读取模块路径，并不会加载或运行你的 Worker 代码。
+</Callout>
+
+## 2. 本地开发
+
+启动开发服务器：
+
+```sh
+cd my-worker
+cf dev
+```
+
+打开 `cf dev` 打印的本地地址，默认是 `http://localhost:5173/`。Worker 会返回 `Hello World!`。
+
+修改 `src/index.ts` 中的响应并保存，刷新页面即可看到变化，开发服务器无需重启。
+
+<Callout variant="tip">
+  在通过 Vite 运行的项目中，`cf dev` 不接受 `--port` 这类选项。要改端口，设置 `vite.config.ts` 中的 `server.port`。
+</Callout>
+
+## 3. 部署
+
+如果还没有登录，先登录：
+
+```sh
+cf auth login
+```
+
+然后部署：
+
+```sh
+cf deploy
+```
+
+`cf deploy` 会构建项目、上传 Worker、部署到你的账号并打印结果。如果你能访问多个账号，`cf` 会询问使用哪一个。
+
+只想验证构建而不部署：
+
+```sh
+cf deploy --dry-run
+```
+
+`--dry-run` 不发送任何 API 请求，因此在登录之前也能运行。
+
+## 无提示地创建项目
+
+在脚本或 CI 任务中 `cf init` 无法提问，因此要显式传入目录。用 `--package-manager` 选择包管理器，可选 `npm`、`pnpm`、`yarn` 或 `bun`：
+
+```sh
+cf init my-worker --package-manager npm
+```
+
+要跳过安装，加上 `--no-install`，之后在项目里自行运行包管理器的安装命令。
+
+## 从已有项目开始
+
+`cf` 也能接管一个现有应用。进入项目目录、安装依赖，然后运行：
+
+```sh
+cf init .
+```
+
+`cf` 会探测框架并展示它找到的设置，包括 Worker 名称、框架、构建命令与输出目录。确认之后，对一个 Vite 应用它会：
+
+- 把 `cf` 与 `@cloudflare/vite-plugin` 装为开发依赖。
+- 在 `vite.config.ts` 中加入 Cloudflare 插件，必要时创建该文件。
+- 创建 `cloudflare.config.ts`，并开启 observability。
+- 添加运行 `cf deploy` 的 `deploy` 脚本。
+- 把 `.wrangler`、`.dev.vars*`、`.env*` 写入 `.gitignore`。
+
+<Callout variant="warn" title="Wrangler 项目请先迁移">
+  自动配置不会读取 Wrangler 配置文件。在只有 `wrangler.jsonc`、`wrangler.json` 或 `wrangler.toml` 而没有 `cloudflare.config.ts` 的项目里，不要运行 `cf init .`、`cf dev`、`cf build` 或 `cf deploy`。请先用 `cf migrate` 完成迁移。
+</Callout>
+
+## 下一步
+
+- 想管理 zone 与 DNS，读[用命令行管理资源](/docs/resources)。
+- 想配置绑定与触发器，读 [cloudflare.config.ts](/docs/config)。
+- 想配合编码智能体工作，读[面向编码智能体](/docs/agents)。
