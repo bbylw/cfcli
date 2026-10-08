@@ -41,6 +41,19 @@ const socialImage = new URL(image, origin);
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script is:inline>
+      // 入场动画的初始状态依赖 .js，必须在样式生效前同步写入。
+      // 这个脚本内联在文档里，只要有任何 JS 执行就一定成功；
+      // 真正的 IntersectionObserver 逻辑在下面的模块里，万一它因网络或
+      // 解析错误没跑起来，兜底定时器会移除 .js，让内容恢复可见。
+      const root = document.documentElement;
+      root.classList.add("js");
+      setTimeout(function () {
+        if (!root.classList.contains("reveal-ready")) {
+          root.classList.remove("js");
+        }
+      }, 2000);
+    </script>
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <title>{fullTitle}</title>
     <meta name="description" content={description} />
@@ -108,6 +121,9 @@ const socialImage = new URL(image, origin);
     <script>
       const targets = document.querySelectorAll<HTMLElement>("[data-reveal]");
       const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+      // 声明观察器已就位，让内联脚本的兜底定时器失效
+      document.documentElement.classList.add("reveal-ready");
 
       if (reduced || !("IntersectionObserver" in window)) {
         targets.forEach((el) => el.classList.add("is-revealed"));

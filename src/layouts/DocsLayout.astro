@@ -21,7 +21,10 @@ interface Props {
 }
 
 const { title, description, group, tag, headings, nav, prev, next } = Astro.props;
-const current = Astro.url.pathname;
+
+// 静态构建产出的是 /docs/config/，而链接是 /docs/config，
+// 直接比较永远不相等，侧栏高亮会整个失效。
+const current = Astro.url.pathname.replace(/\/+$/, "");
 
 const groups = nav.reduce<Record<string, NavItem[]>>((acc, item) => {
   acc[item.group] ??= [];
@@ -30,11 +33,17 @@ const groups = nav.reduce<Record<string, NavItem[]>>((acc, item) => {
 }, {});
 
 const toc = headings.filter((heading) => heading.depth === 2 || heading.depth === 3);
+const hasToc = toc.length > 1;
 ---
 
 <BaseLayout title={title} description={description}>
   <div
-    class="shell grid gap-10 py-12 lg:grid-cols-[210px_minmax(0,1fr)] lg:gap-14 lg:py-16 xl:grid-cols-[210px_minmax(0,1fr)_180px]"
+    class:list={[
+      "shell grid gap-10 py-10 lg:gap-12 lg:py-14",
+      hasToc
+        ? "lg:grid-cols-[210px_minmax(0,1fr)] xl:grid-cols-[210px_minmax(0,1fr)_180px]"
+        : "lg:grid-cols-[210px_minmax(0,1fr)]",
+    ]}
   >
     <aside class="lg:sticky lg:top-24 lg:max-h-[calc(100dvh-8rem)] lg:self-start lg:overflow-y-auto">
       <nav aria-label="文档导航" class="grid gap-7">
@@ -54,9 +63,9 @@ const toc = headings.filter((heading) => heading.depth === 2 || heading.depth ==
                         href={href}
                         aria-current={active ? "page" : undefined}
                         class:list={[
-                          "block rounded-lg px-3 py-2 text-[13.5px] leading-snug transition-colors duration-200",
+                          "block rounded-lg py-2 pl-3 pr-2 text-[13.5px] leading-snug transition-colors duration-200",
                           active
-                            ? "bg-ink-800 text-fog-100"
+                            ? "bg-ink-800 font-medium text-fog-100 shadow-[inset_2px_0_0_var(--color-ember-500)]"
                             : "text-fog-500 hover:bg-ink-900 hover:text-fog-300",
                         ]}
                       >
@@ -86,21 +95,19 @@ const toc = headings.filter((heading) => heading.depth === 2 || heading.depth ==
             )
           }
         </div>
-        <h1
-          class="mt-4 text-[2rem] font-semibold leading-[1.15] tracking-tight text-fog-100 md:text-[2.5rem]"
-        >
+        <h1 class="headline mt-4 text-[2rem] font-semibold leading-[1.15] tracking-tight text-fog-100 md:text-[2.5rem]">
           {title}
         </h1>
         <p class="mt-4 text-[15px] leading-relaxed text-fog-500">{description}</p>
       </header>
 
-      <div class="rule mt-10 pt-10">
+      <div class="rule mt-9 pt-9">
         <div class="prose-cf">
           <slot />
         </div>
       </div>
 
-      <nav class="rule mt-16 grid gap-4 pt-8 sm:grid-cols-2" aria-label="上一篇与下一篇">
+      <nav class="rule mt-14 grid gap-4 pt-8 sm:grid-cols-2" aria-label="上一篇与下一篇">
         {
           prev ? (
             <a
@@ -141,14 +148,21 @@ const toc = headings.filter((heading) => heading.depth === 2 || heading.depth ==
     {
       toc.length > 1 && (
         <aside class="hidden xl:block xl:sticky xl:top-24 xl:self-start">
-          <p class="font-mono text-[11px] uppercase tracking-[0.16em] text-fog-600">本页内容</p>
-          <ul class="mt-3 grid gap-2 border-l border-line">
+          <p class="font-mono text-[11px] uppercase tracking-[0.16em] text-fog-600">
+            本页内容
+          </p>
+          <ul
+            class="mt-3 grid gap-2 border-l border-line"
+            data-toc
+            aria-label="本页目录"
+          >
             {toc.map((heading) => (
               <li>
                 <a
                   href={`#${heading.slug}`}
+                  data-toc-link={heading.slug}
                   class:list={[
-                    "-ml-px block border-l py-0.5 text-[12.5px] leading-snug text-fog-600 transition-colors hover:border-ember-500 hover:text-fog-300",
+                    "-ml-px block border-l py-0.5 text-[12.5px] leading-snug text-fog-600 transition-colors hover:text-fog-300",
                     heading.depth === 3 ? "pl-7" : "pl-4",
                   ]}
                 >
@@ -161,4 +175,52 @@ const toc = headings.filter((heading) => heading.depth === 2 || heading.depth ==
       )
     }
   </div>
+
+  <script>
+    // 目录高亮：跟随滚动位置标记当前小节
+    const toc = document.querySelector("[data-toc]");
+    if (toc) {
+      const links = new Map(
+        Array.from(toc.querySelectorAll<HTMLAnchorElement>("[data-toc-link]")).map(
+          (link) => [link.dataset.tocLink!, link],
+        ),
+      );
+      const targets = Array.from(links.keys())
+        .map((slug) => document.getElementById(slug))
+        .filter((el): el is HTMLElement => el !== null);
+
+      if (targets.length > 0) {
+        const setActive = (slug: string | null) => {
+          for (const [key, link] of links) {
+            const on = key === slug;
+            link.dataset.active = String(on);
+            link.classList.toggle("text-ember-400", on);
+            link.classList.toggle("border-ember-500", on);
+          }
+        };
+
+        let active: string | null = null;
+        const observer = new IntersectionObserver(
+          (entries) => {
+            // 取当前视口上缘之上、最靠近的那个标题
+            let best: { slug: string; top: number } | null = null;
+            for (const entry of entries) {
+              if (!entry.isIntersecting) continue;
+              const slug = entry.target.id;
+              if (!links.has(slug)) continue;
+              const top = Math.abs(entry.boundingClientRect.top);
+              if (!best || top < best.top) best = { slug, top };
+            }
+            if (best && best.slug !== active) {
+              active = best.slug;
+              setActive(active);
+            }
+          },
+          { rootMargin: "-88px 0px -70% 0px", threshold: 0 },
+        );
+
+        for (const target of targets) observer.observe(target);
+      }
+    }
+  </script>
 </BaseLayout>

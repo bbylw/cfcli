@@ -160,6 +160,49 @@
   .rule {
     border-top: 1px solid var(--color-line);
   }
+
+  /* ==========================================================
+     区块节奏：统一入口，但密度分三档，避免每个区块都 py-32
+     造成的"漂浮感"。密集档用于数据带，宽档用于主叙事区块。
+     ========================================================== */
+  .section {
+    padding-block: 4rem;
+  }
+
+  @media (min-width: 768px) {
+    .section {
+      padding-block: 5.5rem;
+    }
+  }
+
+  @media (min-width: 1280px) {
+    .section {
+      padding-block: 6.5rem;
+    }
+  }
+
+  .section-tight {
+    padding-block: 3rem;
+  }
+
+  @media (min-width: 768px) {
+    .section-tight {
+      padding-block: 4rem;
+    }
+  }
+
+  /* 中文标题在混排时容易在词中间断行（如"迁 / 移"），
+     line-break: strict 让标点遵守禁则，balance 让各行长度接近。 */
+  .headline {
+    line-break: strict;
+    word-break: normal;
+    overflow-wrap: break-word;
+  }
+
+  /* 需要保持完整的短语，配合 .headline 在标点处换行 */
+  .nb {
+    white-space: nowrap;
+  }
 }
 
 /* ============================================================
@@ -192,8 +235,15 @@
 
 /* ============================================================
    滚动入场：由 IntersectionObserver 驱动，尊重减少动效
+
+   渐进增强：初始状态由内联脚本给 <html> 加 .js，只有确认 JS 可用
+   才隐藏元素。否则禁用脚本 / 脚本出错 / 打印时，页面下半部分会整片空白。
    ============================================================ */
 [data-reveal] {
+  opacity: 1;
+}
+
+.js [data-reveal] {
   opacity: 0;
   transform: translate3d(0, 18px, 0);
   transition:
@@ -203,10 +253,18 @@
   will-change: opacity, transform;
 }
 
-[data-reveal].is-revealed {
+.js [data-reveal].is-revealed {
   opacity: 1;
   transform: none;
   will-change: auto;
+}
+
+@media print {
+  .js [data-reveal] {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -214,7 +272,7 @@
     scroll-behavior: auto;
   }
 
-  [data-reveal] {
+  .js [data-reveal] {
     opacity: 1;
     transform: none;
     transition: none;

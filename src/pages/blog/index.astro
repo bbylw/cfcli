@@ -15,56 +15,64 @@ const posts = (await getCollection("blog")).sort(
 >
   <div class="relative overflow-hidden border-b border-line">
     <div class="atmos-grid pointer-events-none absolute inset-0" aria-hidden="true"></div>
-    <div class="shell relative py-16 md:py-20">
-      <h1
-        class="text-[2.2rem] font-semibold leading-[1.12] tracking-tight text-fog-100 md:text-[3rem]"
-      >
+    <div class="shell relative py-12 md:py-14">
+      <h1 class="text-[2.2rem] font-semibold leading-[1.12] tracking-tight text-fog-100 md:text-[2.75rem]">
         博客
       </h1>
-      <p class="mt-5 max-w-[52ch] text-[15px] leading-relaxed text-fog-500">
+      <p class="mt-4 max-w-[52ch] text-[15px] leading-relaxed text-fog-500">
         关于 cf、编码智能体与 Cloudflare 开发体验的文章。
       </p>
     </div>
   </div>
 
-  <div class="shell py-14 md:py-20">
-    <ul class="grid gap-px">
-      {
-        posts.map((post, index) => (
-          <li data-reveal style={`--reveal-step:${index}`}>
-            <a
-              href={`/blog/${post.id}`}
-              class="group block border-b border-line py-8 transition-colors duration-200"
-            >
-              <div class="flex flex-wrap items-center gap-x-4 gap-y-2 font-mono text-[11.5px] text-fog-600">
-                <time datetime={post.data.publishedAt.toISOString()}>
-                  {formatDate(post.data.publishedAt)}
-                </time>
-                <span class="flex items-center gap-1.5">
-                  <ClockIcon size={12} weight="bold" />
-                  约 {post.data.minutes} 分钟
-                </span>
-              </div>
-              <h2
-                class="mt-4 max-w-[34ch] text-[1.35rem] font-semibold leading-snug tracking-tight text-fog-100 transition-colors group-hover:text-ember-400 md:text-[1.6rem]"
+  <div class="shell py-10 md:py-12">
+    {
+      posts.length === 0 ? (
+        <p class="py-16 text-center text-[14px] text-fog-600">还没有文章。</p>
+      ) : (
+        <ul class="grid">
+          {posts.map((post, index) => (
+            <li data-reveal style={`--reveal-step:${index}`}>
+              <a
+                href={`/blog/${post.id}`}
+                class="group grid gap-x-8 gap-y-2 border-b border-line py-7 transition-colors duration-200 md:grid-cols-[132px_minmax(0,1fr)_auto] md:items-baseline"
               >
-                {post.data.title}
-              </h2>
-              <p class="mt-3 max-w-[60ch] text-[14.5px] leading-relaxed text-fog-500">
-                {post.data.description}
-              </p>
-              <span class="mt-5 inline-flex items-center gap-1.5 text-[13.5px] text-ember-400">
-                阅读全文
-                <ArrowRightIcon
-                  size={13}
-                  weight="bold"
-                  className="transition-transform duration-200 group-hover:translate-x-0.5"
-                />
-              </span>
-            </a>
-          </li>
-        ))
-      }
-    </ul>
+                <div class="flex items-center gap-3 font-mono text-[11.5px] text-fog-600 md:flex-col md:items-start md:gap-1.5">
+                  <time datetime={post.data.publishedAt.toISOString()}>
+                    {formatDate(post.data.publishedAt)}
+                  </time>
+                  <span class="flex items-center gap-1 md:hidden">
+                    <ClockIcon size={12} weight="bold" />
+                    {post.data.minutes} 分钟
+                  </span>
+                </div>
+
+                <div class="min-w-0">
+                  <h2 class="text-[1.3rem] font-semibold leading-snug tracking-tight text-fog-100 transition-colors group-hover:text-ember-400 md:text-[1.5rem]">
+                    {post.data.title}
+                  </h2>
+                  <p class="mt-2 max-w-[62ch] text-[14.5px] leading-relaxed text-fog-500">
+                    {post.data.description}
+                  </p>
+                  <span class="mt-4 inline-flex items-center gap-1.5 text-[13.5px] text-ember-400">
+                    阅读全文
+                    <ArrowRightIcon
+                      size={13}
+                      weight="bold"
+                      className="transition-transform duration-200 group-hover:translate-x-0.5"
+                    />
+                  </span>
+                </div>
+
+                <span class="hidden shrink-0 items-center gap-1.5 font-mono text-[11.5px] text-fog-600 md:flex">
+                  <ClockIcon size={12} weight="bold" />
+                  {post.data.minutes} 分钟
+                </span>
+              </a>
+            </li>
+          ))}
+        </ul>
+      )
+    }
   </div>
 </BaseLayout>

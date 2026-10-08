@@ -1,7 +1,8 @@
 ---
 import { GithubLogoIcon, ArrowUpRightIcon, ListIcon, XIcon } from "@phosphor-icons/react";
 
-const path = Astro.url.pathname;
+// 去掉结尾斜杠，与链接写法保持一致（构建产物是 /docs/commands/）
+const path = Astro.url.pathname.replace(/\/+$/, "");
 
 const links = [
   { href: "/", label: "概览" },
