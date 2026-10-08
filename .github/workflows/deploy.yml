@@ -22,11 +22,12 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - uses: oven-sh/setup-bun@v2
         with:
-          bun-version: latest
+          # 跟随 1.x：拿到补丁与安全修复，同时挡住 bun 2.x 的破坏性变更
+          bun-version: 1.x
 
       - name: Install dependencies
         run: bun install --frozen-lockfile
@@ -37,7 +38,7 @@ jobs:
       - name: Ensure CNAME survived the build
         run: test "$(cat dist/CNAME)" = "cfcli.ndjp.net"
 
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/upload-pages-artifact@v5
         with:
           path: dist
 
@@ -50,4 +51,4 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5
