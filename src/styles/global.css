@@ -24,6 +24,9 @@
 
   --color-line: #23232c;
 
+  /* 代码表面：比 ink-900 略深，让代码块在面板内也能分层 */
+  --color-code: #0d0d10;
+
   --font-display:
     "Space Grotesk Variable", "PingFang SC", "Hiragino Sans GB",
     "Microsoft YaHei", "Noto Sans CJK SC", system-ui, sans-serif;
@@ -31,10 +34,21 @@
     "JetBrains Mono Variable", ui-monospace, SFMono-Regular, Menlo, Consolas,
     "PingFang SC", "Microsoft YaHei", monospace;
 
-  --radius-container: 16px;
+  /* ============================================================
+     形状锁定：只有三档 + 胶囊，不允许第四种圆角。
+       control   胶囊 —— 一切可点控件（按钮、tab、radio、标签）
+       container 16px —— 承载内容的表面（面板、代码块、Callout）
+       small      8px —— 行级元素（导航行、内联代码、命中区）
+     装饰性圆点/菱形不在此列。
+     ============================================================ */
   --radius-control: 999px;
+  --radius-container: 16px;
+  --radius-small: 8px;
 
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  /* 交互过渡统一 200ms；入场动画（[data-reveal]）单独用 0.65s，
+     两者属于不同类别，不共用。 */
+  --default-transition-duration: 200ms;
 }
 
 /* ============================================================
@@ -64,7 +78,6 @@
   :focus-visible {
     outline: 2px solid var(--color-ember-500);
     outline-offset: 3px;
-    border-radius: 4px;
   }
 
   h1,
@@ -126,10 +139,10 @@
     line-height: 1;
     white-space: nowrap;
     transition:
-      transform 0.18s var(--ease-out-expo),
-      background-color 0.18s var(--ease-out-expo),
-      border-color 0.18s var(--ease-out-expo),
-      color 0.18s var(--ease-out-expo);
+      transform 200ms var(--ease-out-expo),
+      background-color 200ms var(--ease-out-expo),
+      border-color 200ms var(--ease-out-expo),
+      color 200ms var(--ease-out-expo);
   }
 
   .btn:active {
@@ -409,6 +422,8 @@
 .prose-cf h2 {
   color: var(--color-fog-100);
   font-size: 1.6rem;
+  /* 正文继承 1.85 的行高，标题必须收紧，否则行框虚高、垂直节奏被撑开 */
+  line-height: 1.3;
   margin-top: 3rem;
   scroll-margin-top: 6rem;
 }
@@ -416,6 +431,7 @@
 .prose-cf h3 {
   color: var(--color-fog-100);
   font-size: 1.2rem;
+  line-height: 1.35;
   margin-top: 2.25rem;
   scroll-margin-top: 6rem;
 }
@@ -476,10 +492,17 @@
 .prose-cf :not(pre) > code {
   background: var(--color-ink-800);
   border: 1px solid var(--color-line);
-  border-radius: 6px;
+  border-radius: var(--radius-small);
   padding: 0.12em 0.4em;
   font-size: 0.86em;
   color: var(--color-ember-400);
+}
+
+/* Shiki 会把主题自带的背景写进内联样式（vesper 是 #101010），
+   会与站点色板产生第三种"黑"。统一压成 --color-code。 */
+.prose-cf pre,
+.prose-cf pre code {
+  background: var(--color-code) !important;
 }
 
 .prose-cf pre {
@@ -529,6 +552,8 @@
   text-align: left;
   font-family: var(--font-mono);
   font-size: 0.75rem;
+  /* 浏览器默认给 th 700；站内标题体系统一用 600 */
+  font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--color-fog-500);
@@ -554,16 +579,33 @@
   position: relative;
 }
 
+/* 语言标签与复制按钮共用右上角同一个位置，交叉淡入淡出，无布局跳动 */
+.prose-lang,
 .prose-copy {
   position: absolute;
   top: 0.6rem;
   right: 0.6rem;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
   font-family: var(--font-mono);
   font-size: 11px;
   line-height: 1;
+}
+
+.prose-lang {
+  color: var(--color-fog-600);
+  padding: 0.42rem 0.35rem;
+  pointer-events: none;
+  transition: opacity 200ms var(--ease-out-expo);
+}
+
+.prose-codeblock:hover .prose-lang,
+.prose-codeblock:focus-within .prose-lang {
+  opacity: 0;
+}
+
+.prose-copy {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
   color: var(--color-fog-500);
   background: var(--color-ink-800);
   border: 1px solid var(--color-ink-600);
@@ -573,10 +615,10 @@
   opacity: 0;
   visibility: hidden;
   transition:
-    opacity 0.2s var(--ease-out-expo),
-    visibility 0.2s var(--ease-out-expo),
-    color 0.2s var(--ease-out-expo),
-    border-color 0.2s var(--ease-out-expo);
+    opacity 200ms var(--ease-out-expo),
+    visibility 200ms var(--ease-out-expo),
+    color 200ms var(--ease-out-expo),
+    border-color 200ms var(--ease-out-expo);
 }
 
 .prose-codeblock:hover .prose-copy,
@@ -585,11 +627,15 @@
   visibility: visible;
 }
 
-/* 触屏没有 hover，按钮常驻 */
+/* 触屏没有 hover，按钮常驻，语言标签让位 */
 @media (hover: none) {
   .prose-copy {
     opacity: 1;
     visibility: visible;
+  }
+
+  .prose-lang {
+    opacity: 0;
   }
 }
 

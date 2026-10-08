@@ -109,7 +109,7 @@ const tabs = [
           <Code code={tab.code} lang="ts" theme="vesper" />
         </div>
         <div class="flex items-center gap-2 border-t border-line px-4 py-3">
-          <span class="h-1.5 w-1.5 rounded-sm rotate-45 bg-ember-500" aria-hidden="true"
+          <span class="h-1.5 w-1.5 rotate-45 rounded-[1px] bg-ember-500" aria-hidden="true"
           ></span>
           <p class="text-[13px] text-fog-500">{tab.note}</p>
         </div>
@@ -143,7 +143,7 @@ const tabs = [
   .cfg-code :global(pre) {
     margin: 0;
     padding: 1.15rem 1.25rem;
-    background: #0d0d10 !important;
+    background: var(--color-code) !important;
   }
 
   .cfg-code :global(code) {

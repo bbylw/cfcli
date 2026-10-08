@@ -22,7 +22,7 @@ const isActive = (href: string) =>
   <div class="shell flex h-16 items-center justify-between gap-6">
     <a
       href="/"
-      class="group -m-2 flex items-center rounded-xl p-2"
+      class="group -m-2 flex items-center rounded-lg p-2"
       aria-label="cf 首页"
     >
       <Logo />
@@ -88,7 +88,7 @@ const isActive = (href: string) =>
             href={link.href}
             aria-current={isActive(link.href) ? "page" : undefined}
             class:list={[
-              "rounded-xl px-4 py-3 text-sm transition-colors",
+              "rounded-lg px-4 py-3 text-sm transition-colors",
               isActive(link.href)
                 ? "bg-ink-800 text-fog-100"
                 : "text-fog-500 hover:text-fog-100",
@@ -100,7 +100,7 @@ const isActive = (href: string) =>
       }
       <a
         href="https://github.com/cloudflare/cf"
-        class="rounded-xl px-4 py-3 text-sm text-fog-500 transition-colors hover:text-fog-100"
+        class="rounded-lg px-4 py-3 text-sm text-fog-500 transition-colors hover:text-fog-100"
         >GitHub</a
       >
       <a href="/docs/install" class="btn btn-primary mt-2 justify-center">安装 cf</a>

@@ -25,6 +25,14 @@ function initCodeCopy(root: ParentNode) {
     pre.replaceWith(wrapper);
     wrapper.append(pre);
 
+    // 语言标签常驻右上角；悬停时淡出，让位给同位置的复制按钮，
+    // 这样不会产生布局跳动。
+    const tag = document.createElement("span");
+    tag.className = "prose-lang";
+    tag.textContent = language;
+    tag.setAttribute("aria-hidden", "true");
+    wrapper.append(tag);
+
     const button = document.createElement("button");
     button.type = "button";
     button.className = "prose-copy";
