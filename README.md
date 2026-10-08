@@ -28,10 +28,12 @@ bun run dev
 **必须设置 `SITE_URL`**，否则 canonical、`og:url` 与 sitemap 会指向 `localhost`：
 
 ```
-SITE_URL=https://your-domain.example bun run build
+SITE_URL=https://cfcli.ndjp.net bun run build
 ```
 
-输出为纯静态文件，`dist/` 可直接托管到 Cloudflare Pages、Netlify 或任意对象存储。
+输出为纯静态文件，由 GitHub Actions 构建并部署到 GitHub Pages
+（自定义域 `cfcli.ndjp.net`，配置见 `.github/workflows/deploy.yml`
+与 `public/CNAME`）。
 
 ## 内容结构
 
