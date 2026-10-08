@@ -1,16 +1,24 @@
 ---
 /**
- * cf 品牌标识：橙渐变 tile + 纯几何笔画 "cf"。
- * 与 public/favicon.svg 是同一设计，站内用内联 SVG 以便跟随主题，
- * favicon 用文件版（无字体依赖，处处一致）。
+ * cf 品牌标识：橙渐变 tile + 几何笔画 "cf" + 块状终端光标。
+ *
+ * 概念：cf 是已经键入的命令，光标停在末尾等待执行 —— 这正是智能体
+ * 使用它的方式：描述意图，cf 给出命令。
+ *
+ * 光标可闪烁（animate），这是有意义的动效而非装饰：它让标识读起来
+ * 像一个活的提示符。prefers-reduced-motion 下自动停住。
+ *
+ * public/favicon.svg 是同一几何的静态版，修改时必须同步。
  */
 import { nextId } from "../scripts/uid";
 
 interface Props {
   class?: string;
+  /** 光标是否闪烁。默认开启；静态场景（如分享卡片）可关闭。 */
+  animate?: boolean;
 }
 
-const { class: className = "h-8 w-8" } = Astro.props;
+const { class: className = "h-8 w-8", animate = true } = Astro.props;
 
 // 同一页面渲染多次时，渐变 id 必须唯一，否则 url(#…) 会撞车
 const gid = nextId("cf-tile");
@@ -28,6 +36,7 @@ const gid = nextId("cf-tile");
         <stop offset="1" stop-color="#d96a10" />
       </linearGradient>
     </defs>
+
     <rect x="2" y="2" width="60" height="60" rx="15" fill={`url(#${gid})`} />
     <rect
       x="3.2"
@@ -40,11 +49,22 @@ const gid = nextId("cf-tile");
       stroke-opacity="0.2"
       stroke-width="1.6"
     />
+
     <g fill="none" stroke="#1a1208" stroke-linecap="round">
-      <path d="M 29.1 26.7 A 9.5 9.5 0 1 0 29.1 41.3" stroke-width="7" />
-      <path d="M 44 19.5 C 48 19.5 50 21.5 50 25" stroke-width="5" />
-      <path d="M 44 19.5 V 46" stroke-width="7" />
-      <path d="M 36.5 31 H 50.5" stroke-width="6.5" />
+      <path d="M 27.5 25.5 A 8 8 0 1 0 27.5 40.5" stroke-width="6.5" />
+      <path d="M 34 20 C 38.3 20 40.5 21.7 40.5 24.8" stroke-width="5" />
+      <path d="M 34 20 V 45.5" stroke-width="6.5" />
+      <path d="M 28 31.5 H 40.5" stroke-width="6" />
     </g>
+
+    <rect
+      x="44.5"
+      y="32"
+      width="8.5"
+      height="13.5"
+      rx="2.5"
+      fill="#1a1208"
+      class={animate ? "logo-caret" : undefined}
+    />
   </svg>
 </span>

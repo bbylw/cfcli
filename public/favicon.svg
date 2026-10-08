@@ -1,4 +1,14 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!--
+    cf 品牌标识：橙渐变 tile + 几何笔画 "cf" + 块状终端光标。
+
+    概念：cf 是已经键入的命令，光标停在末尾等待执行 —— 这正是智能体
+    使用它的方式：描述意图，cf 给出命令。
+
+    此文件为静态版（favicon 动画不可靠且会持续耗电），
+    站内内联版见 src/components/Logo.astro，光标在那里会闪烁。
+    修改几何时两处必须同步。
+  -->
   <defs>
     <linearGradient id="cf-tile" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0" stop-color="#ffa04d" />
@@ -6,6 +16,7 @@
       <stop offset="1" stop-color="#d96a10" />
     </linearGradient>
   </defs>
+
   <rect x="2" y="2" width="60" height="60" rx="15" fill="url(#cf-tile)" />
   <rect
     x="3.2"
@@ -18,14 +29,13 @@
     stroke-opacity="0.2"
     stroke-width="1.6"
   />
-  <g
-    fill="none"
-    stroke="#1a1208"
-    stroke-linecap="round"
-  >
-    <path d="M 29.1 26.7 A 9.5 9.5 0 1 0 29.1 41.3" stroke-width="7" />
-    <path d="M 44 19.5 C 48 19.5 50 21.5 50 25" stroke-width="5" />
-    <path d="M 44 19.5 V 46" stroke-width="7" />
-    <path d="M 36.5 31 H 50.5" stroke-width="6.5" />
+
+  <g fill="none" stroke="#1a1208" stroke-linecap="round">
+    <path d="M 27.5 25.5 A 8 8 0 1 0 27.5 40.5" stroke-width="6.5" />
+    <path d="M 34 20 C 38.3 20 40.5 21.7 40.5 24.8" stroke-width="5" />
+    <path d="M 34 20 V 45.5" stroke-width="6.5" />
+    <path d="M 28 31.5 H 40.5" stroke-width="6" />
   </g>
+
+  <rect x="44.5" y="32" width="8.5" height="13.5" rx="2.5" fill="#1a1208" />
 </svg>
