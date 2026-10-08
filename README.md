@@ -58,7 +58,6 @@ cf deploy
 
 - 官方仓库：https://github.com/cloudflare/cf
 - Cloudflare 开发者文档：https://developers.cloudflare.com/
-- 中文文档站：https://cfcli.ndjp.net（即本仓库部署的站点）
 
 ## 商标归属
 
