@@ -1,0 +1,44 @@
+version: 2
+
+updates:
+  # Bun 锁文件（lockfileVersion 2，需 Dependabot 支持 Bun 1.4+）
+  - package-ecosystem: "bun"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "Asia/Shanghai"
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "chore"
+      include: "scope"
+    groups:
+      # Astro 生态版本互相牵制，合成一个 PR 才不会装出半套版本
+      astro:
+        patterns:
+          - "astro"
+          - "@astrojs/*"
+      react:
+        patterns:
+          - "react"
+          - "react-dom"
+          - "@types/react"
+          - "@types/react-dom"
+      tailwind:
+        patterns:
+          - "tailwindcss"
+          - "@tailwindcss/*"
+      lint-test:
+        patterns:
+          - "eslint"
+          - "@eslint/*"
+          - "eslint-plugin-*"
+          - "typescript-eslint"
+          - "vitest"
+          - "@vitest/*"
+    ignore:
+      # 版本由项目自行决定，不接受自动升级
+      - dependency-name: "typescript"
+      # package.json overrides 固定为 1.11.3，与 @emnapi/core 配对，不能被升级
+      - dependency-name: "@emnapi/runtime"
