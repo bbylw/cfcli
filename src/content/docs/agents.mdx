@@ -73,6 +73,23 @@ cf d1 create --name my-database --dry-run
 
 `cf` 的根级与分组 `--help` 输出开头会提醒智能体先使用 `cf cli search`。如果智能体输入了不存在的命令，`cf` 会列出最接近的匹配。
 
+## 查找 Cloudflare 文档
+
+`cf cli search` 找命令，`cf docs search` 找文档：
+
+```sh
+cf docs search "proxy a DNS record"
+```
+
+它搜索 Cloudflare 官方文档，需要联网但不需要登录，返回最多五条带 `title`、`description` 与 `url` 的 JSON 结果。选中结果后，用 `Accept: text/markdown` 请求该链接即可拿到整页 Markdown：
+
+```sh
+curl -H "Accept: text/markdown" \
+  https://developers.cloudflare.com/learning-paths/prevent-ddos-attacks/baseline/proxy-dns-records/
+```
+
+两种搜索都应保持泛化：不要在查询里放账号 ID、域名、邮箱、token 等可识别信息。
+
 ## 读取命令输出
 
 结果以 JSON 写入标准输出，而消息（例如选中的 zone）与错误写入标准错误。当标准输出不是终端时，其中只包含结果本身，智能体可以直接解析或用 `jq` 过滤。
@@ -87,7 +104,7 @@ cf d1 create --name my-database --dry-run
 ## 安全地运行命令
 
 - **预演变更。** 加上 `--dry-run` 会把请求以 JSON 打印而不发送。预演不需要凭据。
-- **察觉被中止的删除。** 在非交互式会话中，不带 `--force` 的破坏性命令会打印 `Aborted.` 并以 `0` 退出。
+- **察觉被中止的删除。** 在非交互式会话中，不带 `--force` 的破坏性命令会打印 `Aborted.`、不做修改，并以状态码 `1` 退出。
 - **审查 `--force`。** 在某些命令上 `--force` 同时也是 API 参数。例如 `cf workers delete --force` 会连同其他 Worker 仍在引用的 Worker 一起删除。
 - **在支持时使用本地数据。** `--local` 只对少数本地开发支持的资源有效，主要是 KV 键、通过 `cf d1 raw` 的 D1 数据库、`cf d1 migrations list`、`cf d1 migrations apply` 以及 R2 对象。没有本地实现的命令，包括 `cf d1 query`，会直接返回错误。
 
@@ -120,3 +137,5 @@ cf migrate
 ## 检查本地资源
 
 当 `cf dev` 在受支持的编码智能体中运行时，开发服务器还会打印 Local Explorer API 的地址与主要路由。智能体可以通过它读写本 Worker 绑定的数据，并查询本地 trace 与日志。
+
+也可以在开发服务器地址后加上 `/cdn-cgi/local/explorer` 打开 Local Explorer，手动查看绑定数据、日志与 trace，或用指定的 cron 表达式和计划时间测试 Cron Triggers。

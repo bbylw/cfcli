@@ -15,7 +15,7 @@ import Callout from "../../components/Callout.tsx";
 
 - 安装 `cf` 并满足其[环境要求](/docs/install)。
 - **提交或暂存所有改动**，包括未跟踪文件。只要 `git status` 显示仓库中有任何改动，`cf migrate` 就不会写入文件。被 `.gitignore` 排除的文件不计入。
-- 安装项目依赖。使用 Wrangler 打包器时，Worker 所在的包需要安装 Wrangler 4.136.0 或更高版本。
+- 安装项目依赖。使用 Wrangler 打包器时，Worker 所在的包需要安装最新版 Wrangler。迁移后的 `cf dev`、`cf build` 与 `cf deploy` 需要 Wrangler 4.163.0 或更高版本，更早的版本会被拒绝并提示升级。
 - **不要在项目里先运行 `cf dev`、`cf build` 或 `cf deploy`。** 在未迁移的项目中，它们会写入自己的配置或直接失败。
 
 ## 预演迁移
@@ -60,8 +60,24 @@ Follow-up work:
 不传 `--bundler` 时，输出的第一行会解释这次的选择。要覆盖它，传 `--bundler vite` 或 `--bundler wrangler`。
 
 <Callout variant="note">
-  `cf migrate` 不会安装 Vite，也不会创建 `vite.config.ts`。要把尚未使用 Vite 的项目切到 Vite 打包器，先传 `--bundler vite`，再自行安装 Vite 与插件。
+  `cf migrate` 不会安装 Vite，也不会创建 `vite.config.ts`。要把尚未使用 Vite 的项目切到 Vite 打包器，先传 `--bundler vite`，再自行安装 Vite 与 Cloudflare Vite 插件 2.0。
 </Callout>
+
+```sh
+npm i -D vite @cloudflare/vite-plugin@rc
+```
+
+```ts
+// vite.config.ts
+import { cloudflare } from "@cloudflare/vite-plugin";
+import { defineConfig } from "vite";
+
+export default defineConfig({
+  plugins: [cloudflare()],
+});
+```
+
+如果项目已经使用 Cloudflare Vite 插件，同样安装 `@cloudflare/vite-plugin@rc`。2.0 直接读取 `cloudflare.config.ts`，不再有 `configPath` 选项；`vite.config.ts` 里若传了 `configPath`，需要删掉。
 
 ## 运行迁移
 
@@ -118,6 +134,12 @@ exports: { Counter: exports.durableObject({ storage: "sqlite" }) }
 
 可以让编码智能体按顺序执行：`cf migrate --dry-run` 预演、`cf migrate` 执行、然后逐项处理 `TODO(@cloudflare)` 注释，并就它无法独立决定的选择向你确认。
 
+## 移除 Wrangler 配置
+
+只要 `cloudflare.config.ts` 存在，`cf` 就会忽略 Wrangler 配置文件。用 `cf` 部署成功、并且脚本与 CI 都改用 `cf` 之后，可以删除 Wrangler 配置文件。
+
+Wrangler 不会读取 `cloudflare.config.ts`。如果项目中仍要运行 Wrangler 命令，就保留 Wrangler 配置文件，直到不再需要它们。
+
 ## 迁移之后
 
-当公开测试版结束，Cloudflare 将发布 Wrangler 的最后一个主要版本，引导你迁移到 `cf`。测试版结束后，Wrangler 仍会获得 18 个月的维护支持，留出充足的迁移时间。
+`cf` 1.0 稳定版发布时，Cloudflare 将发布 Wrangler 的最后一个主要版本，引导你迁移到 `cf`。稳定版发布后，Wrangler 仍会获得 18 个月的维护支持，留出充足的迁移时间。

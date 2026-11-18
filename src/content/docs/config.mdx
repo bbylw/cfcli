@@ -11,8 +11,8 @@ import Callout from "../../components/Callout.tsx";
 
 `cloudflare.config.ts` 是 Workers 项目使用的类型化配置文件，默认导出可以定义 Worker、容器应用以及账号设置。因为它是 TypeScript 模块，所以可以使用 import、函数、环境变量与异步值。
 
-<Callout variant="warn" title="公开测试">
-  以 `cloudflare.config.ts` 进行编程式配置目前处于公开测试阶段，配置格式在稳定版发布前可能变化。加载该文件需要 Node.js 22.18 或更高版本，并且不支持 Bun。
+<Callout variant="note" title="1.0 候选发布">
+  以 `cloudflare.config.ts` 进行编程式配置已随 `cf` 1.0 进入候选发布阶段，官方预期配置格式会保持不变直至稳定版。加载该文件需要受支持的 Node.js（最新 LTS 与当前活跃版本），并且不支持 Bun。
 </Callout>
 
 在项目的 `package.json` 中设置 `"type": "module"`。否则 Node.js 每次加载该文件都会打印警告；若设为 `"type": "commonjs"`，加载会直接失败。
@@ -93,6 +93,33 @@ export default defineConfig(({ mode }) => {
 ## 静态资源
 
 `cloudflare.config.ts` 没有 `assets.directory` 字段。在 Vite 项目中，静态资源就是 Vite 客户端构建的产物，其中包含 `publicDir`（默认 `public`）。使用 Wrangler 构建的项目则把目录写在生成的 `wrangler.config.ts` 中。
+
+## 声明导出
+
+`worker.exports` 描述平台如何管理模块导出。键名必须与 `default` 导出或入口点导出的类名一致。它取代了 Wrangler 中按顺序排列的 Durable Object migrations：
+
+```ts
+import { defineConfig, exports } from "cf/config";
+
+export default defineConfig({
+  worker: {
+    name: "example-worker",
+    compatibilityDate: "2026-09-27",
+    exports: {
+      Counter: exports.durableObject({ storage: "sqlite" }),
+      OrderWorkflow: exports.workflow({ name: "order-workflow" }),
+    },
+  },
+});
+```
+
+| Builder | 作用 |
+| --- | --- |
+| `exports.worker({ cache })` | 配置 `WorkerEntrypoint`，可选每个入口点的缓存设置 |
+| `exports.durableObject({ storage })` | 声明 Durable Object 类及其生命周期状态 |
+| `exports.workflow(...)` | 声明继承 `WorkflowEntrypoint` 的类 |
+
+保留仍在使用的类；删除、重命名或迁移类时，按官方说明加入临时 tombstone。`cf migrate` 会把 Wrangler 的 Durable Object migrations 列为必须人工处理的条目。
 
 ## 与配置浏览器配合
 

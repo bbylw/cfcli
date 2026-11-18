@@ -64,7 +64,7 @@ cf dns records delete --zone example.com <RECORD_ID>
 ```
 
 <Callout variant="warn" title="非交互式下的删除">
-  在非交互式会话中，不带 `--force` 的破坏性命令会向标准错误打印 `Aborted.` 并以状态码 `0` 退出。成功退出并不代表资源已被删除。
+  在非交互式会话中，不带 `--force` 的破坏性命令会向标准错误打印 `Aborted.`、不做任何修改，并以状态码 `1` 退出。
 </Callout>
 
 ## 找到其他命令

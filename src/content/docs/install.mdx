@@ -13,7 +13,7 @@ import Callout from "../../components/Callout.tsx";
 ## 环境要求
 
 - 一个 Cloudflare 账号。
-- Node.js 22.18 或更高版本。
+- Node.js：支持最新的 LTS 版本与当前活跃版本。`cf` 会跟随每个受支持的 Node.js 主版本的最新次版本。
 
 <Callout variant="warn" title="运行时">
   Bun 目前不受支持。当 `cf` 运行在 Bun 上时，任何需要加载 `cloudflare.config.ts` 的命令都会失败。
@@ -43,6 +43,12 @@ bun add --global cf
 cf --version
 ```
 
+之后要更新到最新发行版：
+
+```sh
+npm install --global cf@latest
+```
+
 项目也可以把 `cf` 装为开发依赖。此时在该项目内，全局的 `cf` 命令会转去运行项目里安装的版本，于是协作伙伴、编码智能体与 CI 用的都是同一个发行版。用 `cf init` 创建的项目已经自带它。
 
 ```sh
@@ -66,6 +72,8 @@ cf auth whoami
 ```
 
 在远程机器、SSH 会话或容器中，加上 `--no-browser`。`cf` 只打印链接而不打开浏览器，你可以在另一台设备的浏览器里完成批准。需要重新登录时，加上 `--force`。
+
+系统钥匙串（keyring）可用时，登录默认用它加密保存 OAuth 凭据；不可用时会退回明文存储并给出一次提示。用 `--use-keyring` 或 `--no-use-keyring` 显式选择，选择会被记住并作用于所有 profile；`CLOUDFLARE_AUTH_USE_KEYRING=true|false` 可以覆盖已保存的选择。
 
 <Callout variant="note">
   `cf` 维护自己的凭据，不会复用 Wrangler 的登录状态。即使你已经在用 Wrangler，也需要为 `cf` 登录一次。
@@ -101,8 +109,9 @@ cf cli search "create a DNS record"
 
 1. `CLOUDFLARE_API_TOKEN` 环境变量，包括从 `.env` 文件加载的值。
 2. 通过 `--profile <NAME>` 指定的 profile。
-3. 通过 `cf auth activate` 绑定到当前目录或其最近父目录的 profile。
-4. 默认 profile，即 `cf auth login` 登录的那个。
+3. `CLOUDFLARE_AUTH_PROFILE` 环境变量指定的 profile。
+4. 通过 `cf auth activate` 绑定到当前目录或其最近父目录的 profile。
+5. 默认 profile，即 `cf auth login` 登录的那个。
 
 `cf` 不支持 Global API Key。
 
@@ -141,7 +150,9 @@ cf auth create work
 cf auth activate work
 ```
 
-`cf auth activate` 会把 profile 绑定到当前目录及其子目录。要查看全部 profile，运行 `cf auth list`。
+`cf auth activate` 会把 profile 绑定到当前目录及其子目录。要查看全部 profile，运行 `cf auth list`；要删除 profile，运行 `cf auth delete`。
+
+设置了 `CLOUDFLARE_API_TOKEN` 时，`cf auth create`、`activate`、`deactivate` 与 `delete` 都不会运行，因为 token 的优先级高于任何 profile。
 
 ## 为自动化场景认证
 
@@ -168,8 +179,9 @@ API 命令会从当前目录的 `.env` 文件读取以下变量：
 - `CLOUDFLARE_COMPLIANCE_REGION`
 - `CLOUDFLARE_ACCESS_CLIENT_ID`
 - `CLOUDFLARE_ACCESS_CLIENT_SECRET`
+- `CLOUDFLARE_DEPENDENCIES_INSTRUMENTATION`
 
-`cf` 只读取 `.env`，不会读取 `.env.local` 或 `.env.<MODE>` 这类按模式区分的文件。环境中已存在的变量会覆盖文件中的值。
+`cf` 依次读取 `.env`、`.env.local`；传入 `--mode` 时还会读取 `.env.<MODE>` 与 `.env.<MODE>.local`。后面的文件覆盖前面的同名变量，环境中已存在的变量覆盖所有文件。
 
 ## 配置 shell 补全
 

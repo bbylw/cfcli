@@ -10,6 +10,41 @@ import Callout from "../../components/Callout.tsx";
 
 CI 与本地最大的差别在于：没有人可以回答提示。`cf` 在探测到非交互式环境时会改用默认值，或在必须有明确答案时失败。
 
+## GitHub Actions 示例
+
+下面这个工作流在每次 pull request 与 push 到 `main` 时构建一次：先用 dry run 校验，只在 push 到 `main` 时部署同一份构建产物。
+
+```yaml
+name: Deploy
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      CF_SEND_TELEMETRY: "false"
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx cf build
+      - run: npx cf deploy --prebuilt --mode production --dry-run
+      - if: github.event_name == 'push'
+        run: npx cf deploy --prebuilt --mode production
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+```
+
+只有最后一步会拿到密钥，因此前面的步骤对来自 fork 的 pull request 也能运行。把 `cf` 装为开发依赖后，`npx cf` 每次都使用项目锁定的那一份。
+
 ## 使用 API token
 
 在 CI 中不要运行 `cf auth login`，改为设置：
@@ -55,7 +90,9 @@ cf build
 cf deploy --prebuilt
 ```
 
-`--prebuilt` 跳过构建，直接部署已有的 Build Output。`cf build` 不上传任何内容，也不需要凭据。
+`--prebuilt` 跳过构建与自动配置，直接部署已有的 Build Output（`.cloudflare/output/v1/`）。`cf build` 不上传任何内容，也不需要凭据。
+
+部署时必须传入 Build Output 记录的同一个 mode。Vite 构建总会记录 mode：`cf build` 不带 `--mode` 时记录 `production`，所以部署也要传 `--mode production`；用 `--mode staging` 构建就用 `--mode staging` 部署。mode 不一致时，部署会在上传前停止并打印应使用的值。
 
 要验证构建而不发送任何 API 请求：
 
@@ -87,4 +124,4 @@ export DO_NOT_TRACK=1
 cf zones list > zones.json
 ```
 
-失败的命令以非零状态退出。注意一个反直觉之处：在非交互式会话中，不带 `--force` 的破坏性命令会打印 `Aborted.` 并以状态码 `0` 退出，所以退出码本身不足以证明删除成功。
+失败的命令以非零状态退出。在非交互式会话中，不带 `--force` 的破坏性命令会打印 `Aborted.`、不做任何修改，并以状态码 `1` 退出。

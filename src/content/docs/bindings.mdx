@@ -53,6 +53,7 @@ export default defineConfig(({ mode }) => ({
 | Builder | 用途 |
 | --- | --- |
 | `bindings.text(value)` | 内联字符串值，作为文本绑定暴露 |
+| `bindings.json(value)` | 内联 JSON 值，作为 JSON 绑定暴露 |
 | `bindings.secret()` | 密钥，不作为明文写入配置 |
 | `bindings.kv({ id })` | KV 命名空间 |
 | `bindings.d1({ name })` | D1 数据库 |
@@ -61,6 +62,12 @@ export default defineConfig(({ mode }) => ({
 | `bindings.vectorize({ name })` | Vectorize 索引 |
 | `bindings.ai()` | Workers AI |
 | `bindings.worker({ worker })` | 对另一个 Worker 的 service binding |
+| `bindings.durableObject({ worker, exportName })` | 绑定到另一个 Worker 导出的 Durable Object 类 |
+| `bindings.workflow({ name, worker, exportName })` | 绑定到 Workflow |
+
+`bindings.worker()`、`bindings.durableObject()` 与 `bindings.workflow()` 的 `worker` 既可以是 Worker 名称，也可以是被导入的 Worker 定义，后一种写法能在编译期校验导出名是否真实存在。
+
+导出 Durable Object 与 Workflow 类时，用配置中的 `worker.exports` 声明它们的生命周期，而不是 Wrangler 的 migrations；详见 [cloudflare.config.ts](/docs/config)。
 
 <Callout variant="tip" title="类型即文档">
   `bindings.queue<{ userId: string }>` 中的泛型会一路传递到消费代码。智能体读到这里就知道消息体的形状，不需要额外说明。

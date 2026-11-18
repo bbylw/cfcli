@@ -1,0 +1,58 @@
+---
+title: "cf 进入 1.0 候选发布版：配置与 Build Output 稳定下来"
+description: 汇总 cf 1.0 RC 带来的变化：Build Output v1、Vite+ 脚手架、新的认证存储、若干新命令与 CI 行为调整。
+publishedAt: 2026-11-17
+author: 本站编辑部
+role: 社区整理
+minutes: 6
+---
+
+`cf` 1.0 已经发布首个候选版本，并在此后连续发布 RC 补丁。官方对它的定位也从“公开测试”改成了“候选发布”：配置格式、Build Output，以及开发、构建、部署项目的命令已经稳定；只有少数不常用的 API 命令可能还会在 1.0 之前调整。
+
+这篇文章汇总这一轮上游更新里值得站点读者注意的部分。
+
+## Build Output 升级到 v1
+
+构建产物现在写入 `.cloudflare/output/v1/`，旧的 v0 输出会被直接拒绝，需要重新构建后再部署。根目录的 `config.json` 把账号设置放在 `settings` 下，并记录 `cf` 作为 producer。
+
+配套的版本要求也随之提高：
+
+- Vite 项目需要 `@cloudflare/vite-plugin` 2.0.0-rc.0 或更新版本。2.0 直接读取 `cloudflare.config.ts`，不再有 `configPath` 选项。
+- `cf dev`、`cf build`、`cf deploy`、`cf previews deploy` 通过 Wrangler 委托时，需要 Wrangler 4.163.0 或更新版本，更早的版本会被拒绝并提示升级。
+
+`--prebuilt` 现在必须与 Build Output 记录的模式一致。Vite 构建总会记录模式，`cf build` 不带 `--mode` 时记录 `production`，因此部署也要传 `--mode production`；模式不匹配时，命令会在上传前停止并打印应使用的值。
+
+## 新项目改用 Vite+ 工具链
+
+`cf init` 生成的项目现在使用 Vite+，也就是同时包含 Vite 与 Vitest 的本地工具链。除了原有的 `src/index.ts`、`cloudflare.config.ts`、`vite.config.ts`，还会生成 `vitest.config.ts`、`test/index.test.ts`、`tsconfig.json` 与 `.gitignore`；`package.json` 增加 `check`、`format`、`test`、`typecheck` 脚本，`typecheck` 会先运行 `cf workers types`。
+
+`cf dev` 与 `cf build` 运行项目自己的 `vite` 或 `vp`，而不是内置的 `cf-vite`。使用 pnpm 时会写入 `pnpm-workspace.yaml`，使用 Yarn 时写入 `.yarnrc.yml`。
+
+另外，`cf dev` 现在会把多余参数转交给开发服务器，`cf dev --port 8788` 可以直接使用；`cf build` 仍然只接受 `--mode`。
+
+## 登录凭据默认交给系统钥匙串
+
+`cf auth login` 在系统钥匙串可用时，默认用钥匙串中的密钥加密保存 OAuth 凭据；不可用时退回明文存储并给出一次提示。可以用 `--use-keyring` / `--no-use-keyring` 明确选择，选择会被记住并作用于所有 profile，`CLOUDFLARE_AUTH_USE_KEYRING=true|false` 可以覆盖。
+
+凭据的选择顺序也补上了 `CLOUDFLARE_AUTH_PROFILE`：`--profile` 之后、目录绑定之前。`cf dev --profile <name>` 会把选中的 profile 通过该变量传给开发服务器。
+
+## 新增命令
+
+- `cf whoami`：认证信息的人类可读摘要，仍然也可以用 `cf auth whoami`。
+- `cf docs search "<问题>"`：搜索 Cloudflare 官方文档，返回最多五条带标题、说明与链接的 JSON 结果，无需登录。与 `cf cli search` 的分工是：一个找命令，一个找文档。
+- `cf observability tail`：实时流式查看可观测性事件，可按 `--worker` 或 `--zone` 过滤，`--all` 查看全部；`--filters` 可以内联 JSON 或引用 `@filters.json`。长时间运行时 OAuth 凭据过期会自动刷新。
+- `cf workers check`：分析打包体积与启动耗时，并写出 CPU profile。
+
+## 本地开发与 CI 的细节调整
+
+- Local Explorer 的入口是开发服务器地址后的 `/cdn-cgi/local/explorer`，可以查看本地绑定数据、日志与 trace，并测试 Cron Triggers。
+- `--local` 的默认状态目录改为 `.cloudflare/state/v3`，与 Vite 插件 2.0 共用；`--persist-to` 仍然只能和 `--local` 一起使用，在项目外必须传。
+- 非交互式会话中，不带 `--force` 的破坏性命令现在会打印 `Aborted.`、不做任何修改，并以状态码 `1` 退出。此前它以 `0` 退出，容易让流水线误判为删除成功。
+- 自定义 API 标头用 `CLOUDFLARE_API_HEADERS` 传递，值为 JSON 对象；请求体与传输相关的受保护标头不能用它覆盖。
+- 凭据文件不再只读 `.env`：现在依次读取 `.env`、`.env.local`，传入 `--mode` 时再读 `.env.<MODE>` 与 `.env.<MODE>.local`。
+
+## 参考
+
+- [cloudflare/cf 更新日志](https://github.com/cloudflare/cf/blob/main/packages/cli/CHANGELOG.md)
+- [Cloudflare CLI 文档](https://developers.cloudflare.com/cf/)
+- 本站对应页面：[安装与登录](/docs/install)、[cloudflare.config.ts](/docs/config)、[开发、构建与部署](/docs/vite)、[环境变量](/docs/env)

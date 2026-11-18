@@ -15,11 +15,12 @@ import Callout from "../../components/Callout.tsx";
 | 命令 | 作用 |
 | --- | --- |
 | `cf auth login` | 启动登录流程，打印链接与一次性验证码 |
-| `cf auth whoami` | 显示当前身份 |
+| `cf auth whoami` | 显示当前身份，也可写作 `cf whoami` |
 | `cf auth logout` | 退出登录 |
 | `cf auth create <NAME>` | 创建具名 profile 并为其登录 |
 | `cf auth activate <NAME>` | 把 profile 绑定到当前目录及其子目录 |
 | `cf auth deactivate` | 解除目录绑定 |
+| `cf auth delete <NAME>` | 删除 profile |
 | `cf auth list` | 列出所有 profile |
 
 在远程机器、SSH 或容器中加 `--no-browser`，需要重新登录时加 `--force`。
@@ -33,10 +34,19 @@ import Callout from "../../components/Callout.tsx";
 | `cf build` | 构建项目并校验 Build Output |
 | `cf deploy` | 构建、上传并部署 |
 | `cf deploy --dry-run` | 构建并校验，但不上传 |
-| `cf previews deploy` | 部署预览 |
+| `cf deploy <dir>` | 跳过构建，把已构建好的静态目录作为 assets-only Worker 部署 |
+| `cf previews deploy` | 部署 Worker 预览 |
+| `cf workers versions create` | 上传新版本但不部署 |
+| `cf workers triggers deploy` | 只应用路由、cron 与队列等触发器 |
+| `cf workers types` | 从配置生成 `.cloudflare/types/index.d.ts` |
+| `cf workers check` | 分析打包体积与启动耗时 |
 | `cf migrate` | 把 Wrangler 配置转换为 `cloudflare.config.ts` |
 
 `cf init` 的常用参数：`--package-manager`（`npm`、`pnpm`、`yarn`、`bun`）、`--no-install`。
+
+`cf deploy` 常用参数：`--message`、`--tag`、`--secrets-file`、`--worker`、`--dispatch-namespace`、`--containers-rollout`、`--no-provision`、`--prebuilt`。
+
+`--prebuilt` 必须与 Build Output 记录的 mode 一致：Vite 构建总会记录 mode，`cf build` 不带 `--mode` 时记录 `production`，因此部署也要传 `--mode production`。mode 不匹配时命令会在上传前停止并打印应使用的 `--mode`。
 
 ## 资源
 
@@ -65,6 +75,7 @@ cf workers list
 | 命令 | 作用 |
 | --- | --- |
 | `cf cli search "<任务>"` | 用自然语言查找命令，本地运行，返回最多五条结果 |
+| `cf docs search "<问题>"` | 搜索 Cloudflare 官方文档，返回最多五条带标题、说明与链接的结果 |
 | `cf schema <command>` | 显示命令发送的 API 请求结构 |
 | `cf <command> --help` | 显示命令自身的用法 |
 | `--dry-run` | 打印请求而不发送，不需要凭据 |
@@ -76,6 +87,7 @@ cf workers list
 | 命令 | 作用 |
 | --- | --- |
 | `cf complete zsh` | 输出 shell 补全脚本，支持 `bash`、`fish`、`powershell` |
+| `cf observability tail` | 实时流式查看可观测性事件，可加 `--worker`、`--zone`、`--all` 与 `--filters` |
 | `cf --version` | 显示版本 |
 
 <Callout variant="tip" title="另一个命令名">
@@ -99,5 +111,5 @@ cf workers list
 配置方面，`wrangler.toml` / `wrangler.jsonc` 中的 `vars` 对应 `bindings.text()`，`kv_namespaces` 对应 `bindings.kv()`，`d1_databases` 对应 `bindings.d1()`，`r2_buckets` 对应 `bindings.r2()`，`routes`、`triggers.crons` 与 `queues.consumers` 对应 `triggers.*`。
 
 <Callout variant="note">
-  命令名称与参数以 `cf --help` 的实际输出为准。`cf` 处于公开测试阶段，命令、配置与 Build Output 在稳定版发布前仍可能调整。
+  命令名称与参数以 `cf --help` 的实际输出为准。`cf` 1.0 处于候选发布阶段，配置格式与 Build Output 已稳定，少数不常用的 API 命令仍可能在 1.0 前调整。
 </Callout>

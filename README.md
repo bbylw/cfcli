@@ -2,7 +2,7 @@
 
 `cf` 是 Cloudflare 推出的新一代命令行工具：命令直接从 API 文档与 SDK 共用的 OpenAPI 模式生成，一次覆盖 3,000+ 操作——从 Workers、D1、R2、KV，到 DNS、WAF、Access 与域名注册。
 
-> 本仓库是 `cf` 的中文介绍页，内容整理自 Cloudflare 官方 README、发布公告与开发者文档。`cf` 目前处于**公开测试**阶段，命令、配置与构建输出在稳定版发布前仍可能变化。
+> 本仓库是 `cf` 的中文介绍页，内容整理自 Cloudflare 官方 README、发布公告与开发者文档。`cf` 1.0 已进入**候选发布（RC）**阶段：配置格式、Build Output 与项目开发、部署命令已经稳定，少数不常用的 API 命令在 1.0 之前仍可能变化。
 
 ## 为什么是 cf
 
@@ -28,7 +28,7 @@ d1 info / hyperdrive get / workflows describe
 npm i -g cf
 ```
 
-也支持 `bun` / `pnpm` / `yarn` 全局安装。需要 Node.js 运行时（加载 `cloudflare.config.ts` 需要 Node.js 22.18+，不支持 Bun 运行时）。
+也支持 `bun` / `pnpm` / `yarn` 全局安装。需要 Node.js 运行时：支持最新的 LTS 版本与当前活跃版本。Bun 运行时不受支持。
 
 ## 登录
 
@@ -37,6 +37,8 @@ cf auth login
 ```
 
 在远程机器、SSH 会话或容器中加上 `--no-browser`，只打印链接而不打开浏览器。无人值守环境（CI）改用 `CLOUDFLARE_API_TOKEN` 环境变量。注意 `cf` 维护自己的凭据，不会复用 Wrangler 的登录状态。
+
+系统钥匙串可用时，`cf auth login` 默认用它加密保存凭据；用 `--use-keyring` / `--no-use-keyring` 明确选择存储方式，或用 `CLOUDFLARE_AUTH_USE_KEYRING` 覆盖。
 
 ## 上手三步
 

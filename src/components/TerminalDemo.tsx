@@ -50,7 +50,7 @@ const SCENES: Scene[] = [
       { k: "gap" },
       { k: "cmd", v: "cf deploy" },
       { k: "out", v: "使用 Vite 构建 my-worker ...", tone: "muted" },
-      { k: "out", v: "校验 .cloudflare/output/v0/", tone: "muted" },
+      { k: "out", v: "校验 .cloudflare/output/v1/", tone: "muted" },
       { k: "out", v: "https://my-worker.<account>.workers.dev", tone: "accent" },
     ],
   },
